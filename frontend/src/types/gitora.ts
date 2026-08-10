@@ -98,6 +98,7 @@ export interface Meta {
   requests_used: number
   rate_limit_remaining: number | null
   rate_limit_reset: number | null
+  repos_analyzed: number
 }
 
 export interface GitoraAnalysis {
