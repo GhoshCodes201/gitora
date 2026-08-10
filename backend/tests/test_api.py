@@ -34,6 +34,10 @@ class FakeClient:
             CommitWeek(week=1755302400, total=2, days=[1, 1, 0, 0, 0, 0, 0]),
             CommitWeek(week=1755388800, total=2, days=[0, 0, 0, 1, 1, 0, 0]),
         ]
+        self._personal_weekly = [
+            CommitWeek(week=1755302400, total=1, days=[1, 0, 0, 0, 0, 0, 0]),
+            CommitWeek(week=1755388800, total=1, days=[0, 0, 0, 1, 0, 0, 0]),
+        ]
 
     async def get_user(self, username: str) -> GitHubUser:
         if username == "ghost":
@@ -45,6 +49,11 @@ class FakeClient:
 
     async def get_commit_activity(self, owner: str, repo: str) -> list[CommitWeek]:
         return self._weekly
+
+    async def get_personal_commits(
+        self, owner: str, repo: str, username: str
+    ) -> tuple[list[CommitWeek], bool]:
+        return self._personal_weekly, True
 
     async def has_readme(self, owner: str, repo: str) -> bool:
         return True
@@ -84,9 +93,10 @@ def test_analyze_happy_path(client):
         "quality",
         "opensource",
     }
-    assert data["summary"]["total_commits"] == 8
+    assert data["summary"]["total_commits"] == 4
     assert data["summary"]["current_streak_days"] == 0
-    assert data["summary"]["longest_streak_days"] == 2
+    assert data["summary"]["longest_streak_days"] == 1
+    assert sum(week["total"] for week in data["heatmap"]) == 8
     assert data["meta"]["cache_hit"] is False
     assert data["meta"]["requests_used"] == 5
     assert len(data["repositories"]) == 2

@@ -88,7 +88,7 @@ function DashboardBody({ data, refreshing, onRefresh }: DashboardBodyProps) {
   const rising = growth_trend_pct >= 0
 
   const stats = [
-    { icon: GitPullRequest, label: 'Commits', value: compact(summary.total_commits), sub: 'last 52 weeks' },
+    { icon: GitPullRequest, label: 'Your commits', value: compact(summary.total_commits), sub: 'last 52 weeks' },
     { icon: Star, label: 'Stars', value: compact(summary.total_stars) },
     { icon: GitFork, label: 'Forks', value: compact(summary.total_forks) },
     { icon: Boxes, label: 'Repositories', value: `${summary.public_repos}` },
@@ -149,8 +149,12 @@ function DashboardBody({ data, refreshing, onRefresh }: DashboardBodyProps) {
       </div>
 
       <Card>
-        <SectionHeader title="Contributions" right={<span className="text-xs text-muted">last 52 weeks</span>} />
-        <ContributionHeatmap weeks={heatmap} total={summary.total_commits} />
+        <SectionHeader title="Repo activity" right={<span className="text-xs text-muted">last 52 weeks</span>} />
+        <ContributionHeatmap weeks={heatmap} />
+        <p className="mt-3 text-xs text-muted">
+          Repo-wide commit activity across your top repositories. Your own commit counts are shown in the stat
+          breakdown above.
+        </p>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">

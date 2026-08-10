@@ -57,4 +57,6 @@ class RepoAnalysis(BaseModel):
     repo: GitHubRepo
     has_readme: bool = False
     weekly: list[CommitWeek] = Field(default_factory=list)
+    personal_weekly: list[CommitWeek] = Field(default_factory=list)
+    personal_complete: bool = True
     total_commits: int = 0

@@ -19,7 +19,8 @@ class Settings(BaseSettings):
     max_repos_fetched: int = 300
     repos_page_size: int = 100
     repo_stats_budget: int = 10
-    request_budget: int = 30
+    request_budget: int = 45
+    personal_commits_max_pages: int = 3
     cache_ttl_hours: float = 6.0
     db_path: str = "data/gitora.db"
     cors_origins: str = "*"

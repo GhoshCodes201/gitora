@@ -14,14 +14,14 @@ function cellLevel(count: number, max: number): number {
 
 interface ContributionHeatmapProps {
   weeks: HeatmapWeek[]
-  total: number
 }
 
-export default function ContributionHeatmap({ weeks, total }: ContributionHeatmapProps) {
+export default function ContributionHeatmap({ weeks }: ContributionHeatmapProps) {
   const days: number[] = []
   for (const week of weeks) days.push(...week.days.slice(0, 7))
   const max = Math.max(1, ...days)
   const columns = Math.max(weeks.length, 1)
+  const total = weeks.reduce((sum, week) => sum + week.total, 0)
 
   return (
     <div>
@@ -47,8 +47,7 @@ export default function ContributionHeatmap({ weeks, total }: ContributionHeatma
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-        <span>{compact(total)} commits in the last 52 weeks</span>
-        <div className="flex items-center gap-1">
+        <span>{compact(total)} commits in the last 52 weeks</span>        <div className="flex items-center gap-1">
           <span>Less</span>
           {CELL_COLORS.map((color) => (
             <span key={color} className="h-2.5 w-2.5 rounded-[2px]" style={{ backgroundColor: color }} />

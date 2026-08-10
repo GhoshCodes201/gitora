@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 import httpx
@@ -132,6 +132,55 @@ class GitHubClient:
             return True
         except GitHubNotFound:
             return False
+
+    async def get_personal_commits(
+        self, owner: str, repo: str, username: str
+    ) -> tuple[list[CommitWeek], bool]:
+        """Weekly series of the user's commits on the default branch.
+
+        Returns (weeks, complete). Pagination stops once the per-repo page cap
+        is reached (or the request budget runs out), reporting complete=False
+        so the caller can flag the stats as partial.
+        """
+        days_by_week: dict[int, list[int]] = {}
+        page = 1
+        complete = True
+        try:
+            while True:
+                response = await self._get(
+                    f"/repos/{owner}/{repo}/commits",
+                    params={"author": username, "per_page": 100, "page": page},
+                )
+                data = response.json()
+                if not isinstance(data, list) or not data:
+                    break
+                for item in data:
+                    committer = (item.get("commit") or {}).get("committer") or {}
+                    date = _parse_datetime(committer.get("date"))
+                    if date is None:
+                        continue
+                    date = date.astimezone(timezone.utc)
+                    week_start = date - timedelta(days=date.weekday())
+                    week_ts = int(
+                        week_start.replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+                    )
+                    bucket = days_by_week.setdefault(week_ts, [0] * 7)
+                    bucket[date.weekday()] += 1
+                if len(data) < 100:
+                    break
+                if page >= self.settings.personal_commits_max_pages:
+                    complete = False
+                    break
+                page += 1
+        except GitHubBudgetExhausted:
+            complete = False
+        except GitHubNotFound:
+            return [], True
+        weeks = [
+            CommitWeek(week=week_ts, total=sum(days), days=days)
+            for week_ts, days in sorted(days_by_week.items())
+        ]
+        return weeks, complete
 
 
 def _user_from_json(data: dict[str, Any]) -> GitHubUser:

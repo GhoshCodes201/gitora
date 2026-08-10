@@ -81,7 +81,9 @@ class AnalysisService:
             user = await client.get_user(username)
             repos = await client.get_repos(username)
             targets = _select_stats_repos(repos, self.settings.repo_stats_budget)
-            repo_analyses = list(await asyncio.gather(*(self._analyze_repo(client, repo) for repo in targets)))
+            repo_analyses = list(
+                await asyncio.gather(*(self._analyze_repo(client, repo, username) for repo in targets))
+            )
         except GitHubNotFound:
             raise HTTPException(status_code=404, detail=f"GitHub user '{username}' not found")
         except GitHubRateLimited as exc:
@@ -99,14 +101,22 @@ class AnalysisService:
         self.cache.put(username, analysis.model_dump(mode="json"))
         return analysis
 
-    async def _analyze_repo(self, client: GitHubClient, repo: GitHubRepo) -> RepoAnalysis:
-        weekly = await client.get_commit_activity(repo.owner_login, repo.name)
-        has_readme = await client.has_readme(repo.owner_login, repo.name)
+    async def _analyze_repo(
+        self, client: GitHubClient, repo: GitHubRepo, username: str
+    ) -> RepoAnalysis:
+        weekly, personal_result, has_readme = await asyncio.gather(
+            client.get_commit_activity(repo.owner_login, repo.name),
+            client.get_personal_commits(repo.owner_login, repo.name, username),
+            client.has_readme(repo.owner_login, repo.name),
+        )
+        personal_weekly, personal_complete = personal_result
         return RepoAnalysis(
             repo=repo,
             has_readme=has_readme,
             weekly=weekly,
-            total_commits=sum(week.total for week in weekly),
+            personal_weekly=personal_weekly,
+            personal_complete=personal_complete,
+            total_commits=sum(week.total for week in personal_weekly),
         )
 
     def _build_analysis(
@@ -117,24 +127,26 @@ class AnalysisService:
         repo_analyses: list[RepoAnalysis],
         client: GitHubClient,
     ) -> GitoraAnalysis:
-        series = merge_weekly([a.weekly for a in repo_analyses])
-        current_streak, longest_streak = compute_streaks(series)
+        personal_series = merge_weekly([a.personal_weekly for a in repo_analyses])
+        current_streak, longest_streak = compute_streaks(personal_series)
         languages = language_distribution(repos)
-        months = monthly_breakdown(series)
-        growth = growth_trend(series)
-        weekend = weekend_ratio(series)
+        months = monthly_breakdown(personal_series)
+        growth = growth_trend(personal_series)
+        weekend = weekend_ratio(personal_series)
         now = datetime.now(timezone.utc)
 
         total_stars = sum(repo.stargazers_count for repo in repos)
         total_forks = sum(repo.forks_count for repo in repos)
         open_issues = sum(repo.open_issues_count for repo in repos)
         forked_repos = sum(1 for repo in repos if repo.is_fork)
-        commits = total_commits(series)
+        commits = total_commits(personal_series)
 
         partial_components: list[str] = []
         if not repo_analyses or len(repo_analyses) < len(repos):
             partial_components.append("activity")
             partial_components.append("consistency")
+        if not all(a.personal_complete for a in repo_analyses):
+            partial_components.append("commits")
 
         score = build_score(
             commits=commits,
@@ -142,7 +154,7 @@ class AnalysisService:
             stars=total_stars,
             forks=total_forks,
             open_issues=open_issues,
-            active_weeks=active_weeks(series),
+            active_weeks=active_weeks(personal_series),
             current_streak=current_streak,
             longest_streak=longest_streak,
             active_months=len(months),
@@ -155,7 +167,7 @@ class AnalysisService:
 
         summary = SummaryOut(
             total_commits=commits,
-            active_weeks=active_weeks(series),
+            active_weeks=active_weeks(personal_series),
             current_streak_days=current_streak,
             longest_streak_days=longest_streak,
             total_stars=total_stars,
@@ -206,7 +218,10 @@ class AnalysisService:
             ),
             score=score,
             summary=summary,
-            heatmap=[HeatmapWeek(week=week.week, total=week.total, days=week.days) for week in series],
+            heatmap=[
+                HeatmapWeek(week=week.week, total=week.total, days=week.days)
+                for week in merge_weekly([a.weekly for a in repo_analyses])
+            ],
             monthly=[MonthOut(month=item["month"], commits=item["commits"]) for item in months],
             growth_trend_pct=growth,
             weekend_ratio_pct=weekend,

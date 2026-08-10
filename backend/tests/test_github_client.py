@@ -1,5 +1,6 @@
 import pytest
 import respx
+from datetime import datetime, timezone
 from httpx import Response
 
 from app.github.client import GitHubClient, GitHubNotFound, GitHubRateLimited
@@ -119,3 +120,104 @@ async def test_budget_exhausted(settings):
             await client.get_user("octocat")
     finally:
         await client.close()
+
+
+def _commit_json(date: str) -> dict:
+    return {"sha": "abc", "commit": {"committer": {"date": date}}}
+
+
+async def test_get_personal_commits_buckets_by_week_and_day(settings):
+    async with respx.mock() as mock:
+        route = mock.get(
+            "https://api.github.com/repos/o/r/commits",
+            params={"author": "octocat", "per_page": 100, "page": 1},
+        )
+        route.mock(
+            return_value=Response(
+                200,
+                json=[
+                    _commit_json("2025-08-18T10:00:00Z"),
+                    _commit_json("2025-08-18T15:00:00Z"),
+                    _commit_json("2025-08-20T10:00:00Z"),
+                ],
+            )
+        )
+        client = GitHubClient(settings=settings)
+        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        await client.close()
+    assert complete is True
+    assert len(weeks) == 1
+    week_start = datetime(2025, 8, 18, tzinfo=timezone.utc)
+    assert weeks[0].week == int(week_start.timestamp())
+    assert weeks[0].total == 3
+    assert weeks[0].days[0] == 2
+    assert weeks[0].days[2] == 1
+
+
+async def test_get_personal_commits_paginates(settings):
+    async with respx.mock() as mock:
+        route = mock.get("https://api.github.com/repos/o/r/commits")
+        route.side_effect = [
+            Response(200, json=[_commit_json("2025-08-18T10:00:00Z")] * 100),
+            Response(200, json=[_commit_json("2025-08-18T11:00:00Z")]),
+        ]
+        client = GitHubClient(settings=settings)
+        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        await client.close()
+    assert complete is True
+    assert weeks[0].total == 101
+    assert route.call_count == 2
+    assert route.calls[1].request.url.params["page"] == "2"
+
+
+async def test_get_personal_commits_caps_pages(settings):
+    settings = settings.model_copy(update={"personal_commits_max_pages": 2})
+    async with respx.mock() as mock:
+        route = mock.get("https://api.github.com/repos/o/r/commits")
+        route.side_effect = [
+            Response(200, json=[_commit_json("2025-08-18T10:00:00Z")] * 100),
+            Response(200, json=[_commit_json("2025-08-18T11:00:00Z")] * 100),
+            Response(200, json=[_commit_json("2025-08-18T12:00:00Z")] * 100),
+        ]
+        client = GitHubClient(settings=settings)
+        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        await client.close()
+    assert complete is False
+    assert weeks[0].total == 200
+    assert route.call_count == 2
+
+
+async def test_get_personal_commits_empty(settings):
+    async with respx.mock() as mock:
+        mock.get("https://api.github.com/repos/o/r/commits").mock(return_value=Response(200, json=[]))
+        client = GitHubClient(settings=settings)
+        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        await client.close()
+    assert weeks == []
+    assert complete is True
+
+
+async def test_get_personal_commits_not_found(settings):
+    async with respx.mock() as mock:
+        mock.get("https://api.github.com/repos/o/r/commits").mock(
+            return_value=Response(404, json={"message": "Not Found"})
+        )
+        client = GitHubClient(settings=settings)
+        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        await client.close()
+    assert weeks == []
+    assert complete is True
+
+
+async def test_get_personal_commits_budget_exhausted(settings):
+    from app.github.client import GitHubBudgetExhausted
+
+    async with respx.mock() as mock:
+        mock.get("https://api.github.com/repos/o/r/commits").mock(
+            return_value=Response(200, json=[_commit_json("2025-08-18T10:00:00Z")] * 100)
+        )
+        client = GitHubClient(settings=settings, budget=1)
+        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        await client.close()
+    assert complete is False
+    assert weeks[0].total == 100
