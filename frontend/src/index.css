@@ -12,7 +12,28 @@
   --color-muted: #8b949e;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-shine: shine 2.75s linear infinite;
+  --animate-pulse-glow: pulseGlow 2.4s ease-in-out infinite;
+  --animate-spin-slow: spin 14s linear infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes shine {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 
 html {
@@ -25,4 +46,70 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(139, 92, 246, 0.35);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+  border: 2px solid var(--color-bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #39414b;
+}
+
+.card {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-border);
+  background:
+    linear-gradient(var(--color-surface), var(--color-surface)) padding-box,
+    linear-gradient(160deg, rgba(139, 92, 246, 0.16), rgba(34, 211, 238, 0.08)) border-box;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-3px);
+  border-color: rgba(139, 92, 246, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.12),
+    0 12px 40px -12px rgba(139, 92, 246, 0.35);
+}
+
+/* gradient text helpers */
+.text-glow {
+  text-shadow: 0 0 24px currentColor;
+}
+
+/* animated diagonal shine sweep for hero surfaces */
+.shine-surface {
+  position: relative;
+  overflow: hidden;
+}
+.shine-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.06) 45%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 55%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: shine 2.75s linear infinite;
+  pointer-events: none;
 }

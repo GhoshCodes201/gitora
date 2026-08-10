@@ -1,7 +1,7 @@
 import type { HeatmapWeek } from '../types/gitora'
 import { compact } from '../utils/format'
 
-const CELL_COLORS = ['#161b22', '#2a3a5c', '#3b5ba8', '#6d4fc4', '#a78bfa']
+const CELL_COLORS = ['#161b22', '#3b3a5e', '#5b4d8f', '#8b5cf6', '#a78bfa']
 
 function cellLevel(count: number, max: number): number {
   if (count <= 0 || max <= 0) return 0
@@ -26,23 +26,27 @@ export default function ContributionHeatmap({ weeks, total }: ContributionHeatma
   return (
     <div>
       <div className="overflow-x-auto">
-        <div className="min-w-[720px]">
+        <div className="min-w-[760px]">
           <div
             className="grid gap-[3px]"
-            style={{ gridTemplateColumns: `repeat(${columns}, minmax(10px, 1fr))` }}
+            style={{ gridTemplateColumns: `repeat(${columns}, minmax(11px, 1fr))` }}
           >
             {days.map((count, index) => (
               <div
                 key={index}
                 title={`${count} commits`}
-                className="aspect-square rounded-[2px]"
-                style={{ backgroundColor: CELL_COLORS[cellLevel(count, max)] }}
+                className="aspect-square rounded-[3px] transition-transform hover:scale-125"
+                style={{
+                  backgroundColor: CELL_COLORS[cellLevel(count, max)],
+                  boxShadow:
+                    cellLevel(count, max) >= 4 ? '0 0 6px rgba(167,139,250,0.4)' : 'none',
+                }}
               />
             ))}
           </div>
         </div>
       </div>
-      <div className="mt-3 flex items-center justify-between text-xs text-muted">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
         <span>{compact(total)} commits in the last 52 weeks</span>
         <div className="flex items-center gap-1">
           <span>Less</span>
