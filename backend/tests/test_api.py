@@ -101,6 +101,7 @@ def test_analyze_happy_path(client):
     assert sum(week["total"] for week in data["heatmap"]) == 8
     assert data["meta"]["cache_hit"] is False
     assert data["meta"]["requests_used"] == 5
+    assert data["meta"]["repos_analyzed"] == 2
     assert len(data["repositories"]) == 2
     assert data["repositories"][0]["stats_complete"] is True
     assert "Gitora" in data["score"]["disclaimer"]

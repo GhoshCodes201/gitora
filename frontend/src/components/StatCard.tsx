@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { HelpCircle } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useCountUp } from '../hooks/useCountUp'
 
@@ -7,11 +8,12 @@ interface StatCardProps {
   label: string
   value: string
   sub?: string
+  hint?: string
   accent?: string
   index?: number
 }
 
-export default function StatCard({ icon: Icon, label, value, sub, accent = '#8b5cf6', index = 0 }: StatCardProps) {
+export default function StatCard({ icon: Icon, label, value, sub, hint, accent = '#8b5cf6', index = 0 }: StatCardProps) {
   const numeric = parseFloat(value.replace(/[^\d.]/g, ''))
   const isCountable = value !== '0' && (value.includes('.') ? /^\d+(\.\d+)?[kM]?$/.test(value) : /^\d+$/.test(value))
   const shown = useCountUp(isCountable ? numeric : 0, 0.9, 0, 0.1 + index * 0.05)
@@ -37,7 +39,14 @@ export default function StatCard({ icon: Icon, label, value, sub, accent = '#8b5
         >
           <Icon className="h-4 w-4" />
         </span>
-        {label}
+        <span className="flex items-center gap-1">
+          {label}
+          {hint && (
+            <span className="cursor-help" title={hint}>
+              <HelpCircle className="h-3.5 w-3.5 text-muted opacity-60 transition hover:opacity-100" />
+            </span>
+          )}
+        </span>
       </div>
       <div className="mt-2.5 font-display text-2xl font-semibold tracking-tight text-ink">{display}</div>
       {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}

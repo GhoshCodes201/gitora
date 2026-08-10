@@ -88,7 +88,13 @@ function DashboardBody({ data, refreshing, onRefresh }: DashboardBodyProps) {
   const rising = growth_trend_pct >= 0
 
   const stats = [
-    { icon: GitPullRequest, label: 'Your commits', value: compact(summary.total_commits), sub: 'last 52 weeks' },
+    {
+      icon: GitPullRequest,
+      label: 'Your commits',
+      value: compact(summary.total_commits),
+      sub: 'from top repos',
+      hint: 'Commits authored by this profile on the default branch of their top analyzed repos (max 300 per repo, forks included).',
+    },
     { icon: Star, label: 'Stars', value: compact(summary.total_stars) },
     { icon: GitFork, label: 'Forks', value: compact(summary.total_forks) },
     { icon: Boxes, label: 'Repositories', value: `${summary.public_repos}` },
@@ -142,6 +148,7 @@ function DashboardBody({ data, refreshing, onRefresh }: DashboardBodyProps) {
             label={stat.label}
             value={stat.value}
             sub={stat.sub}
+            hint={stat.hint}
             accent={STAT_ACCENTS[index % STAT_ACCENTS.length]}
             index={index}
           />
@@ -151,10 +158,23 @@ function DashboardBody({ data, refreshing, onRefresh }: DashboardBodyProps) {
       <Card>
         <SectionHeader title="Repo activity" right={<span className="text-xs text-muted">last 52 weeks</span>} />
         <ContributionHeatmap weeks={heatmap} />
-        <p className="mt-3 text-xs text-muted">
-          Repo-wide commit activity across your top repositories. Your own commit counts are shown in the stat
-          breakdown above.
-        </p>
+        <p className="mt-3 text-xs font-medium text-muted">How commits are counted</p>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-muted">
+          <li>
+            <span className="text-ink">Your commits</span> — commits authored by this profile on the default branch
+            of their {meta.repos_analyzed} most-active repos (max 300 per repo, forks included). Drives the score and
+            stats above.
+          </li>
+          <li>
+            <span className="text-ink">Repo activity</span> — all contributors' commits across those same repos over
+            the last 52 weeks. This is what the heatmap shows.
+          </li>
+          {meta.partial_components.includes('commits') && (
+            <li className="text-amber-200/80">
+              Some repos have more than 300 of your commits — those are capped, so totals may be undercounted.
+            </li>
+          )}
+        </ul>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">

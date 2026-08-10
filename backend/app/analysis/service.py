@@ -220,6 +220,7 @@ class AnalysisService:
             requests_used=client.requests_used,
             rate_limit_remaining=client.rate_limit_remaining,
             rate_limit_reset=client.rate_limit_reset,
+            repos_analyzed=len(repo_analyses),
         )
 
         return GitoraAnalysis(

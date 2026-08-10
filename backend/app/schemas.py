@@ -105,6 +105,7 @@ class MetaOut(BaseModel):
     requests_used: int = 0
     rate_limit_remaining: Optional[int] = None
     rate_limit_reset: Optional[int] = None
+    repos_analyzed: int = 0
 
 
 class GitoraAnalysis(BaseModel):
