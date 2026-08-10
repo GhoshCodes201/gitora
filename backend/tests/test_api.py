@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 from app.analysis.service import AnalysisService
 from app.api.routes import get_service
 from app.db.cache import CacheStore
-from app.github.client import GitHubNotFound
+from app.github.client import GitHubClient, GitHubError, GitHubNotFound
 from app.github.models import CommitWeek, GitHubRepo, GitHubUser
 from app.main import create_app
 
@@ -42,6 +42,8 @@ class FakeClient:
     async def get_user(self, username: str) -> GitHubUser:
         if username == "ghost":
             raise GitHubNotFound("ghost not found")
+        if username == "boom":
+            raise GitHubError("GitHub API error 500 for /users/boom")
         return self._user
 
     async def get_repos(self, username: str) -> list[GitHubRepo]:
@@ -133,3 +135,42 @@ def test_analyze_username_cleaning(client):
 def test_analyze_empty_username(client):
     response = client.get("/api/v1/analyze/%20")
     assert response.status_code == 422
+
+
+def test_repo_error_marks_stats_incomplete(client, monkeypatch):
+    async def boom(self, owner: str, repo: str):
+        if repo == "beta":
+            raise GitHubError("GitHub API error 500")
+        return self._weekly
+
+    monkeypatch.setattr(FakeClient, "get_commit_activity", boom)
+    response = client.get("/api/v1/analyze/octocat")
+    assert response.status_code == 200
+    data = response.json()
+    by_name = {repo["name"]: repo for repo in data["repositories"]}
+    assert by_name["alpha"]["stats_complete"] is True
+    assert by_name["beta"]["stats_complete"] is False
+    assert "activity" in data["meta"]["partial_components"]
+    assert "consistency" in data["meta"]["partial_components"]
+    assert data["summary"]["total_commits"] == 2
+
+
+def test_analyze_github_error_returns_502(client):
+    response = client.get("/api/v1/analyze/boom")
+    assert response.status_code == 502
+    assert "GitHub API error" in response.json()["detail"]
+
+
+def test_analyze_budget_exhausted_returns_503(settings, tmp_path):
+    app = create_app()
+    store = CacheStore(str(tmp_path / "gitora.db"))
+    service = AnalysisService(
+        cache=store,
+        settings=settings,
+        client_factory=lambda s: GitHubClient(settings=s, budget=0),
+    )
+    app.dependency_overrides[get_service] = lambda: service
+    with TestClient(app) as test_client:
+        response = test_client.get("/api/v1/analyze/octocat")
+    assert response.status_code == 503
+    store.close()

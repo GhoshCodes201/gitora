@@ -21,7 +21,13 @@ from app.analysis.metrics import (
 from app.analysis.score import build_score
 from app.core.config import Settings
 from app.db.cache import CacheStore
-from app.github.client import GitHubClient, GitHubNotFound, GitHubRateLimited
+from app.github.client import (
+    GitHubBudgetExhausted,
+    GitHubClient,
+    GitHubError,
+    GitHubNotFound,
+    GitHubRateLimited,
+)
 from app.github.models import GitHubRepo, GitHubUser, RepoAnalysis
 from app.schemas import (
     GitoraAnalysis,
@@ -94,6 +100,12 @@ class AnalysisService:
                 stale["meta"]["warning"] = f"GitHub rate limit reached; showing cached data (resets at {exc.reset_at} UTC)."
                 return GitoraAnalysis(**stale)
             raise HTTPException(status_code=429, detail="GitHub API rate limit reached. Try again later.")
+        except GitHubBudgetExhausted:
+            raise HTTPException(
+                status_code=503, detail="GitHub API request budget exhausted. Retry with a GitHub token."
+            )
+        except GitHubError as exc:
+            raise HTTPException(status_code=502, detail=f"GitHub API error: {exc}")
         finally:
             await client.close()
 
@@ -104,11 +116,18 @@ class AnalysisService:
     async def _analyze_repo(
         self, client: GitHubClient, repo: GitHubRepo, username: str
     ) -> RepoAnalysis:
-        weekly, personal_result, has_readme = await asyncio.gather(
-            client.get_commit_activity(repo.owner_login, repo.name),
-            client.get_personal_commits(repo.owner_login, repo.name, username),
-            client.has_readme(repo.owner_login, repo.name),
-        )
+        try:
+            weekly, personal_result, has_readme = await asyncio.gather(
+                client.get_commit_activity(repo.owner_login, repo.name),
+                client.get_personal_commits(repo.owner_login, repo.name, username),
+                client.has_readme(repo.owner_login, repo.name),
+            )
+        except GitHubRateLimited:
+            raise
+        except GitHubBudgetExhausted:
+            raise
+        except GitHubError:
+            return RepoAnalysis(repo=repo, has_readme=False, stats_complete=False)
         personal_weekly, personal_complete = personal_result
         return RepoAnalysis(
             repo=repo,
@@ -142,7 +161,11 @@ class AnalysisService:
         commits = total_commits(personal_series)
 
         partial_components: list[str] = []
-        if not repo_analyses or len(repo_analyses) < len(repos):
+        if (
+            not repo_analyses
+            or len(repo_analyses) < len(repos)
+            or not all(a.stats_complete for a in repo_analyses)
+        ):
             partial_components.append("activity")
             partial_components.append("consistency")
         if not all(a.personal_complete for a in repo_analyses):
@@ -255,7 +278,7 @@ class AnalysisService:
                     is_archived=repo.is_archived,
                     pushed_at=repo.pushed_at.isoformat() if repo.pushed_at else None,
                     total_commits=analysis.total_commits if analysis else None,
-                    stats_complete=analysis is not None,
+                    stats_complete=analysis.stats_complete if analysis else False,
                     weekly=[HeatmapWeek(week=week.week, total=week.total, days=week.days) for week in weekly],
                 )
             )

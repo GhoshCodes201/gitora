@@ -59,4 +59,5 @@ class RepoAnalysis(BaseModel):
     weekly: list[CommitWeek] = Field(default_factory=list)
     personal_weekly: list[CommitWeek] = Field(default_factory=list)
     personal_complete: bool = True
+    stats_complete: bool = True
     total_commits: int = 0
