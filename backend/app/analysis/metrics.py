@@ -66,7 +66,9 @@ def weekend_ratio(series: list[CommitWeek]) -> float:
     total = sum(week.total for week in series)
     if total == 0:
         return 0.0
-    weekend = sum(week.days[5] + week.days[6] for week in series)
+    weekend = 0
+    for week in series:
+        weekend += sum(week.days[i] for i in (5, 6) if i < len(week.days))
     return round(weekend / total * 100.0, 1)
 
 

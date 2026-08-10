@@ -56,6 +56,15 @@ def test_weekend_ratio():
     assert weekend_ratio(series) == round(6 / 11 * 100, 1)
 
 
+def test_weekend_ratio_short_days_list():
+    series = [
+        make_week(1, 10, [1, 1, 1, 1, 1, 5]),  # only 6 days, Sat cell present
+        make_week(2, 10, [1]),  # single day
+    ]
+    assert weekend_ratio(series) == 25.0
+    assert weekend_ratio([make_week(1, 0, [])]) == 0.0
+
+
 def test_growth_trend_flat_and_rising():
     flat = [make_week(i, 10, [0] * 7) for i in range(16)]
     assert growth_trend(flat, window=8) == 0.0
