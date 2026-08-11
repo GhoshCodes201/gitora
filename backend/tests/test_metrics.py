@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from app.analysis.metrics import (
     active_weeks,
@@ -19,6 +19,15 @@ def make_week(ts: int, total: int, days: list[int]) -> CommitWeek:
     return CommitWeek(week=ts, total=total, days=days)
 
 
+def current_week_start() -> int:
+    today = datetime.now(timezone.utc)
+    return int(
+        (today - timedelta(days=today.weekday()))
+        .replace(hour=0, minute=0, second=0, microsecond=0)
+        .timestamp()
+    )
+
+
 def test_merge_weekly_sums_and_sorts():
     a = [make_week(2, 5, [0] * 7), make_week(1, 3, [0] * 7)]
     b = [make_week(1, 2, [1] * 7), make_week(2, 1, [0] * 7)]
@@ -34,14 +43,38 @@ def test_active_weeks():
     assert active_weeks(series) == 2
 
 
-def test_compute_streaks_ignores_incomplete_final_week():
+def test_compute_streaks_counts_full_past_weeks():
+    start = current_week_start()
     series = [
-        make_week(1, 4, [1, 1, 1, 1, 0, 0, 0]),
-        make_week(2, 4, [0, 0, 0, 1, 1, 1, 1]),
-        make_week(3, 3, [1, 1, 1, 0, 0, 0, 0]),
+        make_week(start - 2 * 604800, 4, [1, 1, 1, 1, 0, 0, 0]),
+        make_week(start - 604800, 4, [0, 0, 0, 1, 1, 1, 1]),
     ]
     current, longest = compute_streaks(series)
     assert current == 4
+    assert longest == 4
+
+
+def test_compute_streaks_cuts_current_week_at_today():
+    start = current_week_start()
+    today = datetime.now(timezone.utc)
+    series = [
+        make_week(start - 604800, 4, [1, 1, 1, 1, 0, 0, 0]),
+        make_week(start, 7, [1, 1, 1, 1, 1, 1, 1]),
+    ]
+    current, longest = compute_streaks(series)
+    active_so_far = today.weekday() + 1
+    assert current == active_so_far
+    assert longest == max(4, active_so_far)
+
+
+def test_compute_streaks_breaks_on_gap():
+    start = current_week_start()
+    series = [
+        make_week(start - 604800, 7, [1, 1, 1, 1, 1, 1, 1]),
+        make_week(start, 0, [0] * 7),
+    ]
+    current, longest = compute_streaks(series)
+    assert current == 0
     assert longest == 7
 
 
@@ -134,3 +167,54 @@ def test_average_repo_quality():
     average = average_repo_quality([good, bad], now=now)
     assert 0 < average < 100
     assert average_repo_quality([], now=now) == 0.0
+
+
+def test_average_repo_quality_no_archived_fallback():
+    now = datetime(2026, 7, 1, tzinfo=timezone.utc)
+    archived = RepoAnalysis(
+        repo=GitHubRepo(name="a", is_archived=True, size_kb=100, stargazers_count=100),
+        has_readme=True,
+    )
+    template = RepoAnalysis(
+        repo=GitHubRepo(name="b", is_template=True, size_kb=100, stargazers_count=100),
+        has_readme=True,
+    )
+    assert average_repo_quality([archived, template], now=now) == 0.0
+
+
+def test_merge_weekly_pads_short_days():
+    a = [make_week(1, 7, [1, 1, 1, 1, 1, 1, 1])]
+    b = [make_week(1, 6, [1, 1, 1, 1, 1, 1])]
+    merged = merge_weekly([a, b])
+    assert merged[0].days == [2, 2, 2, 2, 2, 2, 1]
+    assert merged[0].total == 13
+
+
+def test_monthly_breakdown_skips_invalid_weeks():
+    jan = int(datetime(2026, 1, 5, tzinfo=timezone.utc).timestamp())
+    series = [
+        make_week(10**18, 5, [0] * 7),
+        make_week(jan, 4, [0] * 7),
+    ]
+    result = monthly_breakdown(series)
+    assert [item["month"] for item in result] == ["2026-01"]
+    assert result[0]["commits"] == 4
+
+
+def test_language_distribution_tolerates_zero_size():
+    repos = [
+        GitHubRepo(name="a", language="Python", size_kb=0),
+        GitHubRepo(name="b", language="Python", size_kb=0),
+        GitHubRepo(name="c", language="Java", size_kb=0),
+    ]
+    dist = language_distribution(repos)
+    assert dist[0]["name"] == "Python"
+    assert dist[0]["percentage"] == 66.7
+
+
+def test_weekend_ratio_tolerates_empty_and_zero_totals():
+    series = [
+        CommitWeek(week=1, total=0, days=[]),
+        CommitWeek(week=2, total=4, days=[0, 0, 0, 0, 0, 2, 2]),
+    ]
+    assert weekend_ratio(series) == 100.0

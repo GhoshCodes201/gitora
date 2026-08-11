@@ -49,8 +49,8 @@ class FakeClient:
     async def get_repos(self, username: str) -> list[GitHubRepo]:
         return self._repos
 
-    async def get_commit_activity(self, owner: str, repo: str) -> list[CommitWeek]:
-        return self._weekly
+    async def get_commit_activity(self, owner: str, repo: str) -> tuple[list[CommitWeek], bool]:
+        return self._weekly, True
 
     async def get_personal_commits(
         self, owner: str, repo: str, username: str
@@ -142,7 +142,7 @@ def test_repo_error_marks_stats_incomplete(client, monkeypatch):
     async def boom(self, owner: str, repo: str):
         if repo == "beta":
             raise GitHubError("GitHub API error 500")
-        return self._weekly
+        return self._weekly, True
 
     monkeypatch.setattr(FakeClient, "get_commit_activity", boom)
     response = client.get("/api/v1/analyze/octocat")
@@ -154,6 +154,32 @@ def test_repo_error_marks_stats_incomplete(client, monkeypatch):
     assert "activity" in data["meta"]["partial_components"]
     assert "consistency" in data["meta"]["partial_components"]
     assert data["summary"]["total_commits"] == 2
+    assert data["meta"]["warning"] is not None
+
+
+def test_repo_crash_is_isolated(client, monkeypatch):
+    async def boom(self, owner: str, repo: str):
+        raise ValueError("unexpected crash")
+
+    monkeypatch.setattr(FakeClient, "get_commit_activity", boom)
+    response = client.get("/api/v1/analyze/octocat")
+    assert response.status_code == 200
+    data = response.json()
+    assert all(repo["stats_complete"] is False for repo in data["repositories"])
+    assert "activity" in data["meta"]["partial_components"]
+    assert data["meta"]["warning"] is not None
+
+
+def test_analyze_partial_commit_activity_flags_incomplete(client, monkeypatch):
+    async def partial_activity(self, owner: str, repo: str):
+        return self._weekly, False
+
+    monkeypatch.setattr(FakeClient, "get_commit_activity", partial_activity)
+    response = client.get("/api/v1/analyze/octocat")
+    assert response.status_code == 200
+    data = response.json()
+    assert all(repo["stats_complete"] is False for repo in data["repositories"])
+    assert data["meta"]["warning"] is not None
 
 
 def test_analyze_github_error_returns_502(client):

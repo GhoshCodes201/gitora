@@ -3,7 +3,18 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from app.github.sanitize import normalize_days
+
+
+def _non_negative(value: Optional[int]) -> int:
+    if value is None:
+        return 0
+    try:
+        return max(int(value), 0)
+    except (TypeError, ValueError):
+        return 0
 
 
 class GitHubUser(BaseModel):
@@ -46,11 +57,41 @@ class GitHubRepo(BaseModel):
     created_at: Optional[datetime] = None
     pushed_at: Optional[datetime] = None
 
+    @field_validator("stargazers_count", "forks_count", "open_issues_count", "size_kb")
+    @classmethod
+    def _sanitize_counts(cls, value: Optional[int]) -> int:
+        return _non_negative(value)
+
+    @field_validator("topics")
+    @classmethod
+    def _sanitize_topics(cls, value: Optional[list]) -> list[str]:
+        if not isinstance(value, (list, tuple)):
+            return []
+        return [str(topic) for topic in value if topic]
+
 
 class CommitWeek(BaseModel):
     week: int
     total: int = 0
     days: list[int] = Field(default_factory=lambda: [0] * 7)
+
+    @field_validator("week")
+    @classmethod
+    def _sanitize_week(cls, value: Optional[int]) -> int:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return 0
+
+    @field_validator("total")
+    @classmethod
+    def _sanitize_total(cls, value: Optional[int]) -> int:
+        return _non_negative(value)
+
+    @field_validator("days")
+    @classmethod
+    def _sanitize_days(cls, value) -> list[int]:
+        return normalize_days(value)
 
 
 class RepoAnalysis(BaseModel):

@@ -13,9 +13,10 @@ interface ProfileCardProps {
 }
 
 export default function ProfileCard({ profile, score, summary, refreshing, onRefresh }: ProfileCardProps) {
-  const tier = rankForScore(score.total)
-  const level = levelForScore(score.total)
-  const { current, next } = xpProgress(score.total)
+  const safeScore = Number.isFinite(score.total) ? Math.max(0, Math.min(100, score.total)) : 0
+  const tier = rankForScore(safeScore)
+  const level = levelForScore(safeScore)
+  const { current, next } = xpProgress(safeScore)
   const levelPct = Math.round((current / next) * 100)
   const streakActive = summary.current_streak_days > 0
   const levelShown = useCountUp(level, 0.8, 1, 0.1)
