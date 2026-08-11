@@ -71,6 +71,7 @@ class AnalysisService:
         self.settings = settings or Settings()
         self.cache = cache or CacheStore(self.settings.db_path)
         self._client_factory = client_factory or _default_client_factory
+        self._inflight: dict[tuple[str, bool], asyncio.Task[GitoraAnalysis]] = {}
 
     async def analyze(self, username: str, force: bool = False) -> GitoraAnalysis:
         username = username.strip().lstrip("@")
@@ -86,6 +87,15 @@ class AnalysisService:
                 except ValidationError:
                     pass  # stale cache from an older schema — refetch
 
+        key = (username, force)
+        task = self._inflight.get(key)
+        if task is None or task.done():
+            task = asyncio.create_task(self._do_analyze(username))
+            self._inflight[key] = task
+            task.add_done_callback(lambda _task: self._inflight.pop(key, None))
+        return await asyncio.shield(task)
+
+    async def _do_analyze(self, username: str) -> GitoraAnalysis:
         client = self._client_factory(self.settings)
         try:
             user = await client.get_user(username)
@@ -106,7 +116,8 @@ class AnalysisService:
             raise HTTPException(status_code=429, detail="GitHub API rate limit reached. Try again later.")
         except GitHubBudgetExhausted:
             raise HTTPException(
-                status_code=503, detail="GitHub API request budget exhausted. Retry with a GitHub token."
+                status_code=503,
+                detail="GitHub API request budget exhausted. Set GITORA_GITHUB_TOKEN or retry later.",
             )
         except GitHubError as exc:
             raise HTTPException(status_code=502, detail=f"GitHub API error: {exc}")
@@ -129,7 +140,10 @@ class AnalysisService:
         except GitHubRateLimited:
             raise
         except GitHubBudgetExhausted:
-            raise
+            # The request budget ran out while working on this repo. Degrade
+            # gracefully: finish the analysis with partial data rather than
+            # failing the whole request with a 503.
+            return RepoAnalysis(repo=repo, has_readme=False, stats_complete=False)
         except Exception:
             # Isolate per-repo failures: a single malformed/errored repo must
             # never take down the whole analysis.

@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     cache_ttl_hours: float = 6.0
     db_path: str = "data/gitora.db"
     cors_origins: str = "*"
+    api_rate_limit: int = 10
+    api_rate_window_seconds: int = 600
+    api_global_daily_limit: int = 200
 
 
 @lru_cache(maxsize=1)

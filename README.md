@@ -10,7 +10,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript&logoColor=fff&style=flat-square)]()
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=fff&style=flat-square)]()
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=fff&style=flat-square)]()
-[![tests](https://img.shields.io/badge/tests-38%20passed-22d3ee?style=flat-square)]()
+[![tests](https://img.shields.io/badge/tests-81%20passed-22d3ee?style=flat-square)]()
 [![license](https://img.shields.io/badge/license-MIT-8b5cf6?style=flat-square)]()
 
 </div>
@@ -23,7 +23,7 @@ Gitora doesn't just count commits — it tells a **story** about your GitHub act
 project quality, collaboration and open-source contributions, and rolls it all into a single
 **Gitora Score**.
 
-- 🚀 **Analyze any public GitHub profile** — no sign-up, no token needed
+- 🚀 **Analyze any public GitHub profile** — no sign-up needed, no token required to try it
 - 📊 **Five weighted pillars** feed into one transparent score (0–100)
 - 🔥 **Streaks, active weeks & rhythm** measured from real commit activity
 - 🏆 **Achievements** unlock as your profile tells its story
@@ -75,6 +75,15 @@ pip install -e ".[dev]"
 cp .env.example .env      # optional, defaults are fine
 uvicorn app.main:app --reload --port 8000
 ```
+
+> **Rate limits & tokens:** GitHub's anonymous API allows only 60 requests/hour,
+> and one analysis can use ~30–45 of them. For public deployments, set
+> `GITORA_GITHUB_TOKEN` in `.env` (5,000 requests/hour). Results are cached for
+> 6 hours and concurrent requests for the same profile are coalesced, which
+> keeps the anonymous limits workable for personal use. The `/api/v1/analyze`
+> endpoint is also rate-limited per IP (default 10 requests / 10 min) and by a
+> global daily cap (200) — tune via `GITORA_API_RATE_LIMIT`,
+> `GITORA_API_RATE_WINDOW_SECONDS` and `GITORA_API_GLOBAL_DAILY_LIMIT`.
 
 ### Frontend — React + TypeScript + Vite + Tailwind
 

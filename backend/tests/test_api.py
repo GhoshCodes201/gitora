@@ -4,9 +4,15 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.analysis.service import AnalysisService
+from app.api.ratelimit import FixedWindowLimiter
 from app.api.routes import get_service
 from app.db.cache import CacheStore
-from app.github.client import GitHubClient, GitHubError, GitHubNotFound
+from app.github.client import (
+    GitHubBudgetExhausted,
+    GitHubClient,
+    GitHubError,
+    GitHubNotFound,
+)
 from app.github.models import CommitWeek, GitHubRepo, GitHubUser
 from app.main import create_app
 
@@ -67,6 +73,7 @@ class FakeClient:
 @pytest.fixture
 def client(settings, tmp_path):
     app = create_app()
+    app.state.rate_limiter = FixedWindowLimiter(10_000, 60)
     store = CacheStore(str(tmp_path / "gitora.db"))
     service = AnalysisService(cache=store, settings=settings, client_factory=lambda settings: FakeClient())
     app.dependency_overrides[get_service] = lambda: service
@@ -200,4 +207,38 @@ def test_analyze_budget_exhausted_returns_503(settings, tmp_path):
     with TestClient(app) as test_client:
         response = test_client.get("/api/v1/analyze/octocat")
     assert response.status_code == 503
+    store.close()
+
+
+def test_budget_exhausted_during_repo_analysis_is_graceful(client, monkeypatch):
+    async def boom(self, owner: str, repo: str):
+        raise GitHubBudgetExhausted()
+
+    monkeypatch.setattr(FakeClient, "get_commit_activity", boom)
+    response = client.get("/api/v1/analyze/octocat")
+    assert response.status_code == 200
+    data = response.json()
+    assert all(repo["stats_complete"] is False for repo in data["repositories"])
+    assert "activity" in data["meta"]["partial_components"]
+    assert "consistency" in data["meta"]["partial_components"]
+    assert data["meta"]["warning"] is not None
+
+
+def test_analyze_rate_limited(settings, tmp_path):
+    app = create_app()
+    app.state.rate_limiter = FixedWindowLimiter(1, 600)
+    store = CacheStore(str(tmp_path / "gitora.db"))
+    service = AnalysisService(
+        cache=store,
+        settings=settings,
+        client_factory=lambda s: FakeClient(),
+    )
+    app.dependency_overrides[get_service] = lambda: service
+    with TestClient(app) as test_client:
+        first = test_client.get("/api/v1/analyze/octocat")
+        assert first.status_code == 200
+        second = test_client.get("/api/v1/analyze/octocat")
+        assert second.status_code == 429
+        assert "Retry-After" in second.headers
+        assert second.json()["detail"]
     store.close()
