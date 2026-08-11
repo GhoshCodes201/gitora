@@ -18,9 +18,10 @@ const SPARKLES = [
 ]
 
 export default function ScoreGauge({ score, label }: ScoreGaugeProps) {
-  const tier = rankForScore(score)
-  const shown = useCountUp(score, 1.15, 0, 0.15)
-  const { current, next } = xpProgress(score)
+  const safe = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0
+  const tier = rankForScore(safe)
+  const shown = useCountUp(safe, 1.15, 0, 0.15)
+  const { current, next } = xpProgress(safe)
   const radius = 82
   const circumference = 2 * Math.PI * radius
 
@@ -60,7 +61,7 @@ export default function ScoreGauge({ score, label }: ScoreGaugeProps) {
             strokeLinecap="round"
             strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset: circumference * (1 - score / 100) }}
+            animate={{ strokeDashoffset: circumference * (1 - safe / 100) }}
             transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
           />
         </svg>

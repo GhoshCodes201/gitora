@@ -1,9 +1,10 @@
 import pytest
 import respx
+import httpx
 from datetime import datetime, timezone
 from httpx import Response
 
-from app.github.client import GitHubClient, GitHubNotFound, GitHubRateLimited
+from app.github.client import GitHubClient, GitHubError, GitHubNotFound, GitHubRateLimited
 
 USER_JSON = {
     "login": "octocat",
@@ -58,8 +59,9 @@ async def test_get_commit_activity(settings):
             return_value=Response(200, json=STATS_JSON)
         )
         client = GitHubClient(settings=settings)
-        weeks = await client.get_commit_activity("o", "r")
+        weeks, complete = await client.get_commit_activity("o", "r")
         await client.close()
+    assert complete is True
     assert weeks[0].total == 5
     assert weeks[1].days == [0, 0, 1, 0, 1, 0, 1]
 
@@ -69,9 +71,35 @@ async def test_get_commit_activity_retries_202(settings):
         route = mock.get("https://api.github.com/repos/o/r/stats/commit_activity")
         route.side_effect = [Response(202), Response(200, json=STATS_JSON)]
         client = GitHubClient(settings=settings)
-        weeks = await client.get_commit_activity("o", "r")
+        weeks, complete = await client.get_commit_activity("o", "r")
         await client.close()
     assert len(weeks) == 2
+    assert complete is True
+
+
+async def test_get_commit_activity_double_202_is_incomplete(settings):
+    async with respx.mock() as mock:
+        route = mock.get("https://api.github.com/repos/o/r/stats/commit_activity")
+        route.side_effect = [Response(202), Response(202)]
+        client = GitHubClient(settings=settings)
+        weeks, complete = await client.get_commit_activity("o", "r")
+        await client.close()
+    assert weeks == []
+    assert complete is False
+
+
+async def test_get_commit_activity_skips_invalid_weeks(settings):
+    stats = [{"week": -5, "total": 3, "days": [1] * 7}, STATS_JSON[0]]
+    async with respx.mock() as mock:
+        mock.get("https://api.github.com/repos/o/r/stats/commit_activity").mock(
+            return_value=Response(200, json=stats)
+        )
+        client = GitHubClient(settings=settings)
+        weeks, complete = await client.get_commit_activity("o", "r")
+        await client.close()
+    assert complete is True
+    assert len(weeks) == 1
+    assert weeks[0].total == 5
 
 
 async def test_has_readme(settings):
@@ -221,3 +249,63 @@ async def test_get_personal_commits_budget_exhausted(settings):
         await client.close()
     assert complete is False
     assert weeks[0].total == 100
+
+
+async def test_repo_with_null_counts_does_not_crash(settings):
+    repo_json = {
+        "id": 1,
+        "name": "r",
+        "owner": {"login": "octocat"},
+        "stargazers_count": None,
+        "forks_count": None,
+        "open_issues_count": None,
+        "size": None,
+        "license": None,
+        "topics": None,
+        "fork": False,
+        "archived": False,
+        "pushed_at": None,
+    }
+    async with respx.mock() as mock:
+        mock.get(
+            "https://api.github.com/users/octocat/repos",
+            params={"per_page": 100, "page": 1},
+        ).mock(return_value=Response(200, json=[repo_json]))
+        client = GitHubClient(settings=settings)
+        repos = await client.get_repos("octocat")
+        await client.close()
+    assert repos[0].stargazers_count == 0
+    assert repos[0].forks_count == 0
+    assert repos[0].size_kb == 0
+    assert repos[0].license_spdx is None
+    assert repos[0].topics == []
+    assert repos[0].pushed_at is None
+
+
+async def test_network_error_converted_to_github_error(settings):
+    async with respx.mock() as mock:
+        mock.get("https://api.github.com/users/octocat").mock(
+            side_effect=httpx.ConnectError("boom")
+        )
+        client = GitHubClient(settings=settings)
+        with pytest.raises(GitHubError):
+            await client.get_user("octocat")
+        await client.close()
+
+
+async def test_invalid_json_raises_github_error(settings):
+    async with respx.mock() as mock:
+        mock.get("https://api.github.com/users/octocat").mock(return_value=Response(200, text="not json"))
+        client = GitHubClient(settings=settings)
+        with pytest.raises(GitHubError):
+            await client.get_user("octocat")
+        await client.close()
+
+
+async def test_user_non_dict_shape_raises_github_error(settings):
+    async with respx.mock() as mock:
+        mock.get("https://api.github.com/users/octocat").mock(return_value=Response(200, json=[1, 2, 3]))
+        client = GitHubClient(settings=settings)
+        with pytest.raises(GitHubError):
+            await client.get_user("octocat")
+        await client.close()

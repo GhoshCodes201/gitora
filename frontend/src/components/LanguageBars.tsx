@@ -11,7 +11,10 @@ interface LangBarProps {
 }
 
 function LangBar({ lang, color, index }: LangBarProps) {
-  const pct = useCountUp(lang.percentage, 0.9, 0, 0.1 + index * 0.06)
+  const safePct = Number.isFinite(lang.percentage)
+    ? Math.max(0, Math.min(100, lang.percentage))
+    : 0
+  const pct = useCountUp(safePct, 0.9, 0, 0.1 + index * 0.06)
 
   return (
     <div className="group">
@@ -30,7 +33,7 @@ function LangBar({ lang, color, index }: LangBarProps) {
           className="h-full rounded-full"
           style={{ background: `linear-gradient(90deg, ${color}66, ${color})` }}
           initial={{ width: 0 }}
-          whileInView={{ width: `${lang.percentage}%` }}
+          whileInView={{ width: `${safePct}%` }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 + index * 0.07 }}
         />

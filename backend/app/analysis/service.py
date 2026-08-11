@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Callable, Optional
 
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 from app.analysis.achievements import evaluate_achievements
 from app.analysis.metrics import (
@@ -79,8 +80,11 @@ class AnalysisService:
         if not force:
             cached = self.cache.get(username)
             if cached:
-                cached["meta"]["cache_hit"] = True
-                return GitoraAnalysis(**cached)
+                try:
+                    cached["meta"] = {**cached.get("meta", {}), "cache_hit": True}
+                    return GitoraAnalysis(**cached)
+                except ValidationError:
+                    pass  # stale cache from an older schema — refetch
 
         client = self._client_factory(self.settings)
         try:
@@ -117,7 +121,7 @@ class AnalysisService:
         self, client: GitHubClient, repo: GitHubRepo, username: str
     ) -> RepoAnalysis:
         try:
-            weekly, personal_result, has_readme = await asyncio.gather(
+            weekly_result, personal_result, has_readme = await asyncio.gather(
                 client.get_commit_activity(repo.owner_login, repo.name),
                 client.get_personal_commits(repo.owner_login, repo.name, username),
                 client.has_readme(repo.owner_login, repo.name),
@@ -126,8 +130,11 @@ class AnalysisService:
             raise
         except GitHubBudgetExhausted:
             raise
-        except GitHubError:
+        except Exception:
+            # Isolate per-repo failures: a single malformed/errored repo must
+            # never take down the whole analysis.
             return RepoAnalysis(repo=repo, has_readme=False, stats_complete=False)
+        weekly, weekly_complete = weekly_result
         personal_weekly, personal_complete = personal_result
         return RepoAnalysis(
             repo=repo,
@@ -135,7 +142,8 @@ class AnalysisService:
             weekly=weekly,
             personal_weekly=personal_weekly,
             personal_complete=personal_complete,
-            total_commits=sum(week.total for week in personal_weekly),
+            stats_complete=weekly_complete,
+            total_commits=sum(int(w.total or 0) for w in personal_weekly),
         )
 
     def _build_analysis(
@@ -214,6 +222,16 @@ class AnalysisService:
             forked_repos=forked_repos,
         )
 
+        incomplete = [a.repo.name for a in repo_analyses if not a.stats_complete]
+        warning = None
+        if incomplete:
+            shown = incomplete[:5]
+            more = "…" if len(incomplete) > 5 else ""
+            warning = (
+                f"Could not fully analyze {len(incomplete)} repo(s): "
+                f"{', '.join(shown)}{more}. Some stats are partial."
+            )
+
         meta = MetaOut(
             generated_at=now.isoformat(),
             partial_components=partial_components,
@@ -221,6 +239,7 @@ class AnalysisService:
             rate_limit_remaining=client.rate_limit_remaining,
             rate_limit_reset=client.rate_limit_reset,
             repos_analyzed=len(repo_analyses),
+            warning=warning,
         )
 
         return GitoraAnalysis(
