@@ -17,7 +17,7 @@ class CacheStore:
         self.db_path = db_path
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
-        self._conn = sqlite3.connect(db_path, check_same_thread=False)
+        self._conn = sqlite3.connect(db_path, check_same_thread=False, timeout=5.0)
         self._conn.execute(
             """
             CREATE TABLE IF NOT EXISTS analyses (
@@ -41,7 +41,10 @@ class CacheStore:
         payload, expires_at = row
         if not ignore_ttl and time.time() >= expires_at:
             return None
-        return json.loads(payload)
+        try:
+            return json.loads(payload)
+        except (json.JSONDecodeError, ValueError):
+            return None
 
     def put(self, username: str, payload: dict[str, Any], ttl_hours: Optional[float] = None) -> None:
         ttl_hours = ttl_hours if ttl_hours is not None else get_settings().cache_ttl_hours

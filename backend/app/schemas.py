@@ -96,8 +96,16 @@ class AchievementOut(BaseModel):
     icon: str
 
 
+class CommitOut(BaseModel):
+    sha: str = ""
+    date: str = ""
+    message: str = ""
+    repo: str = ""
+
+
 class MetaOut(BaseModel):
     generated_at: str
+    expires_at: str
     cache_hit: bool = False
     stale: bool = False
     warning: Optional[str] = None
@@ -117,6 +125,7 @@ class GitoraAnalysis(BaseModel):
     monthly: list[MonthOut] = Field(default_factory=list)
     growth_trend_pct: float = 0.0
     weekend_ratio_pct: float = 0.0
+    recent_commits: list[CommitOut] = Field(default_factory=list)
     repositories: list[RepoOut] = Field(default_factory=list)
     achievements: list[AchievementOut] = Field(default_factory=list)
     meta: MetaOut

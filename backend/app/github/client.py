@@ -8,7 +8,7 @@ from typing import Any, Optional
 import httpx
 
 from app.core.config import Settings, get_settings
-from app.github.models import CommitWeek, GitHubRepo, GitHubUser
+from app.github.models import CommitInfo, CommitWeek, GitHubRepo, GitHubUser
 from app.github.sanitize import (
     normalize_days,
     parse_date,
@@ -35,6 +35,9 @@ class GitHubRateLimited(GitHubError):
 
 class GitHubBudgetExhausted(GitHubError):
     pass
+
+
+_MAX_RECENT_COMMITS_PER_REPO = 50
 
 
 class GitHubClient:
@@ -69,6 +72,13 @@ class GitHubClient:
 
     async def close(self) -> None:
         await self._client.aclose()
+
+    @staticmethod
+    def _commit_message(commit_data: Any) -> str:
+        if not isinstance(commit_data, dict):
+            return ""
+        message = commit_data.get("message") or ""
+        return message.split("\n", 1)[0] if isinstance(message, str) else ""
 
     def _update_rate_limits(self, response: httpx.Response) -> None:
         remaining = response.headers.get("x-ratelimit-remaining")
@@ -165,14 +175,16 @@ class GitHubClient:
 
     async def get_personal_commits(
         self, owner: str, repo: str, username: str
-    ) -> tuple[list[CommitWeek], bool]:
+    ) -> tuple[list[CommitWeek], list[CommitInfo], bool]:
         """Weekly series of the user's commits on the default branch.
 
-        Returns (weeks, complete). Pagination stops once the per-repo page cap
-        is reached (or the request budget runs out), reporting complete=False
-        so the caller can flag the stats as partial.
+        Returns (weeks, commits, complete). `commits` holds the most recent
+        commit records (sha + date + message) for the activity feed. Pagination
+        stops once the per-repo page cap is reached (or the request budget runs
+        out), reporting complete=False so the caller can flag stats as partial.
         """
         days_by_week: dict[int, list[int]] = {}
+        commits: list[CommitInfo] = []
         page = 1
         complete = True
         try:
@@ -205,6 +217,14 @@ class GitHubClient:
                         continue
                     bucket = days_by_week.setdefault(week_ts, [0] * 7)
                     bucket[date.weekday()] += 1
+                    if len(commits) < _MAX_RECENT_COMMITS_PER_REPO:
+                        commits.append(
+                            CommitInfo(
+                                sha=str(item.get("sha") or ""),
+                                date=date,
+                                message=self._commit_message(item.get("commit") or {}),
+                            )
+                        )
                 if len(data) < 100:
                     break
                 if page >= self.settings.personal_commits_max_pages:
@@ -214,13 +234,13 @@ class GitHubClient:
         except GitHubBudgetExhausted:
             complete = False
         except GitHubNotFound:
-            return [], True
+            return [], [], True
         weeks = [
             CommitWeek(week=week_ts, total=sum(days), days=days)
             for week_ts, days in sorted(days_by_week.items())
             if valid_week(week_ts)
         ]
-        return weeks, complete
+        return weeks, commits, complete
 
 
 def _commit_week_from_json(data: dict[str, Any]) -> Optional[CommitWeek]:

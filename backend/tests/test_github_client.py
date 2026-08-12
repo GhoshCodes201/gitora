@@ -171,10 +171,12 @@ async def test_get_personal_commits_buckets_by_week_and_day(settings):
             )
         )
         client = GitHubClient(settings=settings)
-        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        weeks, commits, complete = await client.get_personal_commits("o", "r", "octocat")
         await client.close()
     assert complete is True
     assert len(weeks) == 1
+    assert len(commits) == 3
+    assert commits[0].message == ""
     week_start = datetime(2025, 8, 18, tzinfo=timezone.utc)
     assert weeks[0].week == int(week_start.timestamp())
     assert weeks[0].total == 3
@@ -190,10 +192,11 @@ async def test_get_personal_commits_paginates(settings):
             Response(200, json=[_commit_json("2025-08-18T11:00:00Z")]),
         ]
         client = GitHubClient(settings=settings)
-        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        weeks, commits, complete = await client.get_personal_commits("o", "r", "octocat")
         await client.close()
     assert complete is True
     assert weeks[0].total == 101
+    assert len(commits) == 50
     assert route.call_count == 2
     assert route.calls[1].request.url.params["page"] == "2"
 
@@ -208,10 +211,11 @@ async def test_get_personal_commits_caps_pages(settings):
             Response(200, json=[_commit_json("2025-08-18T12:00:00Z")] * 100),
         ]
         client = GitHubClient(settings=settings)
-        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        weeks, commits, complete = await client.get_personal_commits("o", "r", "octocat")
         await client.close()
     assert complete is False
     assert weeks[0].total == 200
+    assert len(commits) == 50
     assert route.call_count == 2
 
 
@@ -219,9 +223,10 @@ async def test_get_personal_commits_empty(settings):
     async with respx.mock() as mock:
         mock.get("https://api.github.com/repos/o/r/commits").mock(return_value=Response(200, json=[]))
         client = GitHubClient(settings=settings)
-        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        weeks, commits, complete = await client.get_personal_commits("o", "r", "octocat")
         await client.close()
     assert weeks == []
+    assert commits == []
     assert complete is True
 
 
@@ -231,9 +236,10 @@ async def test_get_personal_commits_not_found(settings):
             return_value=Response(404, json={"message": "Not Found"})
         )
         client = GitHubClient(settings=settings)
-        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        weeks, commits, complete = await client.get_personal_commits("o", "r", "octocat")
         await client.close()
     assert weeks == []
+    assert commits == []
     assert complete is True
 
 
@@ -245,10 +251,11 @@ async def test_get_personal_commits_budget_exhausted(settings):
             return_value=Response(200, json=[_commit_json("2025-08-18T10:00:00Z")] * 100)
         )
         client = GitHubClient(settings=settings, budget=1)
-        weeks, complete = await client.get_personal_commits("o", "r", "octocat")
+        weeks, commits, complete = await client.get_personal_commits("o", "r", "octocat")
         await client.close()
     assert complete is False
     assert weeks[0].total == 100
+    assert len(commits) == 50
 
 
 async def test_repo_with_null_counts_does_not_crash(settings):

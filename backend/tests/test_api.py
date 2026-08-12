@@ -105,7 +105,7 @@ def test_analyze_happy_path(client):
     assert data["summary"]["total_commits"] == 4
     assert data["summary"]["current_streak_days"] == 0
     assert data["summary"]["longest_streak_days"] == 1
-    assert sum(week["total"] for week in data["heatmap"]) == 8
+    assert sum(week["total"] for week in data["heatmap"]) == 4
     assert data["meta"]["cache_hit"] is False
     assert data["meta"]["requests_used"] == 5
     assert data["meta"]["repos_analyzed"] == 2

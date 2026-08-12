@@ -94,11 +94,18 @@ class CommitWeek(BaseModel):
         return normalize_days(value)
 
 
+class CommitInfo(BaseModel):
+    sha: str = ""
+    date: Optional[datetime] = None
+    message: str = ""
+
+
 class RepoAnalysis(BaseModel):
     repo: GitHubRepo
     has_readme: bool = False
     weekly: list[CommitWeek] = Field(default_factory=list)
     personal_weekly: list[CommitWeek] = Field(default_factory=list)
+    personal_commits: list[CommitInfo] = Field(default_factory=list)
     personal_complete: bool = True
     stats_complete: bool = True
     total_commits: int = 0

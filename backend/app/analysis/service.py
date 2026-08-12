@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
 from fastapi import HTTPException
@@ -31,6 +31,7 @@ from app.github.client import (
 )
 from app.github.models import GitHubRepo, GitHubUser, RepoAnalysis
 from app.schemas import (
+    CommitOut,
     GitoraAnalysis,
     HeatmapWeek,
     MetaOut,
@@ -82,7 +83,10 @@ class AnalysisService:
             cached = self.cache.get(username)
             if cached:
                 try:
-                    cached["meta"] = {**cached.get("meta", {}), "cache_hit": True}
+                    cached["meta"] = {
+                        **self._cache_hit_meta(cached.get("meta", {})),
+                        "cache_hit": True,
+                    }
                     return GitoraAnalysis(**cached)
                 except ValidationError:
                     pass  # stale cache from an older schema — refetch
@@ -109,10 +113,16 @@ class AnalysisService:
         except GitHubRateLimited as exc:
             stale = self.cache.get(username, ignore_ttl=True)
             if stale:
-                stale["meta"]["cache_hit"] = True
-                stale["meta"]["stale"] = True
-                stale["meta"]["warning"] = f"GitHub rate limit reached; showing cached data (resets at {exc.reset_at} UTC)."
-                return GitoraAnalysis(**stale)
+                try:
+                    stale["meta"] = {
+                        **self._cache_hit_meta(stale.get("meta", {})),
+                        "cache_hit": True,
+                        "stale": True,
+                        "warning": f"GitHub rate limit reached; showing cached data (resets at {exc.reset_at} UTC).",
+                    }
+                    return GitoraAnalysis(**stale)
+                except ValidationError:
+                    pass
             raise HTTPException(status_code=429, detail="GitHub API rate limit reached. Try again later.")
         except GitHubBudgetExhausted:
             raise HTTPException(
@@ -248,6 +258,7 @@ class AnalysisService:
 
         meta = MetaOut(
             generated_at=now.isoformat(),
+            expires_at=(now + timedelta(hours=self.settings.cache_ttl_hours)).isoformat(),
             partial_components=partial_components,
             requests_used=client.requests_used,
             rate_limit_remaining=client.rate_limit_remaining,
@@ -255,6 +266,18 @@ class AnalysisService:
             repos_analyzed=len(repo_analyses),
             warning=warning,
         )
+
+        all_commits = []
+        for analysis in repo_analyses:
+            for c in analysis.personal_commits:
+                all_commits.append(CommitOut(
+                    sha=c.sha,
+                    date=c.date.isoformat() if c.date else "",
+                    message=c.message,
+                    repo=analysis.repo.name,
+                ))
+        all_commits.sort(key=lambda c: c.date, reverse=True)
+        recent_commits = all_commits[:50]
 
         return GitoraAnalysis(
             username=username,
@@ -277,15 +300,30 @@ class AnalysisService:
             summary=summary,
             heatmap=[
                 HeatmapWeek(week=week.week, total=week.total, days=week.days)
-                for week in merge_weekly([a.weekly for a in repo_analyses])
+                for week in merge_weekly([a.personal_weekly for a in repo_analyses])[-52:]
             ],
             monthly=[MonthOut(month=item["month"], commits=item["commits"]) for item in months],
             growth_trend_pct=growth,
             weekend_ratio_pct=weekend,
+            recent_commits=recent_commits,
             repositories=repositories,
             achievements=achievements,
             meta=meta,
         )
+
+    def _cache_hit_meta(self, meta: dict) -> dict:
+        meta = {**meta}
+        if not meta.get("expires_at") and meta.get("generated_at"):
+            try:
+                generated = datetime.fromisoformat(meta["generated_at"])
+                if generated.tzinfo is None:
+                    generated = generated.replace(tzinfo=timezone.utc)
+                meta["expires_at"] = (
+                    generated + timedelta(hours=self.settings.cache_ttl_hours)
+                ).isoformat()
+            except ValueError:
+                pass
+        return meta
 
     @staticmethod
     def _build_repo_outputs(repos: list[GitHubRepo], repo_analyses: list[RepoAnalysis]) -> list[RepoOut]:
