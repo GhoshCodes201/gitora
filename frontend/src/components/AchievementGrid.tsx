@@ -22,13 +22,13 @@ interface CatalogEntry {
 }
 
 const CATALOG: CatalogEntry[] = [
-  { id: 'builder', name: 'Builder', description: 'Maintains 10+ repositories', icon: Hammer, rarity: 'Common', color: '#60a5fa' },
-  { id: 'polyglot', name: 'Polyglot', description: 'Codes in 5+ languages', icon: Languages, rarity: 'Common', color: '#34d399' },
-  { id: 'weekend-warrior', name: 'Weekend Warrior', description: '20%+ weekend commits', icon: Coffee, rarity: 'Uncommon', color: '#22d3ee' },
-  { id: 'rising-developer', name: 'Rising Developer', description: 'Recent activity grew 25%+', icon: Rocket, rarity: 'Uncommon', color: '#f59e0b' },
+  { id: 'builder', name: 'Builder', description: 'Maintains 10+ repositories', icon: Hammer, rarity: 'Common', color: '#4edbed' },
+  { id: 'polyglot', name: 'Polyglot', description: 'Codes in 5+ languages', icon: Languages, rarity: 'Common', color: '#9a6bff' },
+  { id: 'weekend-warrior', name: 'Weekend Warrior', description: '20%+ weekend commits', icon: Coffee, rarity: 'Uncommon', color: '#8d72d3' },
+  { id: 'rising-developer', name: 'Rising Developer', description: 'Recent activity grew 25%+', icon: Rocket, rarity: 'Uncommon', color: '#a78bfa' },
   { id: 'open-source-explorer', name: 'Open Source Explorer', description: 'Forked 2+ external repos', icon: Globe, rarity: 'Rare', color: '#f472b6' },
-  { id: 'consistent-coder', name: 'Consistent Coder', description: 'Reached a 30-day streak', icon: CalendarCheck, rarity: 'Rare', color: '#a78bfa' },
-  { id: 'commit-machine', name: 'Commit Machine', description: '500+ total commits', icon: Flame, rarity: 'Legendary', color: '#fbbf24' },
+  { id: 'consistent-coder', name: 'Consistent Coder', description: 'Reached a 30-day streak', icon: CalendarCheck, rarity: 'Rare', color: '#b8a1ed' },
+  { id: 'commit-machine', name: 'Commit Machine', description: '500+ total commits', icon: Flame, rarity: 'Legendary', color: '#e07ce9' },
 ]
 
 const RARITY_ORDER = ['Common', 'Uncommon', 'Rare', 'Legendary']
@@ -57,7 +57,7 @@ function Badge({ entry, unlocked }: { entry: CatalogEntry; unlocked: boolean }) 
             background: unlocked
               ? `linear-gradient(160deg, ${entry.color}cc, ${entry.color}33)`
               : '#0d1014',
-            border: unlocked ? `1px solid ${entry.color}66` : '1px solid #21262d',
+            border: unlocked ? `1px solid ${entry.color}66` : '1px solid #2a2438',
           }}
         >
           <Icon
@@ -105,7 +105,7 @@ export default function AchievementGrid({ achievements }: AchievementGridProps) 
       <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-surface2">
         <motion.div
           className="h-full rounded-full"
-          style={{ background: 'linear-gradient(90deg,#8b5cf6,#22d3ee)' }}
+          style={{ background: 'linear-gradient(90deg,#8046fe,#e07ce9)' }}
           initial={{ width: 0 }}
           whileInView={{ width: `${(earnedCount / CATALOG.length) * 100}%` }}
           viewport={{ once: true }}

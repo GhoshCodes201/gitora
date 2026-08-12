@@ -59,7 +59,7 @@ export default function DemoGauge({ username }: DemoGaugeProps) {
               <stop offset="100%" stopColor={tier.color} stopOpacity={0.65} />
             </linearGradient>
           </defs>
-          <circle cx="88" cy="88" r={radius} fill="none" stroke="#161b22" strokeWidth="12" />
+          <circle cx="88" cy="88" r={radius} fill="none" stroke="#1c1933" strokeWidth="12" />
           <circle
             cx="88"
             cy="88"

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import type { Language } from '../types/gitora'
 import { useCountUp } from '../hooks/useCountUp'
 
-const COLORS = ['#8b5cf6', '#22d3ee', '#f59e0b', '#34d399', '#f87171', '#60a5fa', '#e879f9', '#a3e635']
+const COLORS = ['#8046fe', '#4edbed', '#e07ce9', '#9a6bff', '#b8a1ed', '#f472b6', '#a78bfa', '#8d72d3']
 
 interface LangBarProps {
   lang: Language

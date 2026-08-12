@@ -11,7 +11,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'))
 function Loader() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg">
-      <div className="flex h-14 w-14 animate-pulse-glow items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-cyan text-2xl font-bold text-white">
+      <div className="flex h-14 w-14 animate-pulse-glow items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-pink text-2xl font-bold text-white">
         G
       </div>
       <p className="font-mono text-xs text-muted">summoning aura…</p>

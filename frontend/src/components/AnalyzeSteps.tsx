@@ -23,25 +23,25 @@ export default function AnalyzeSteps({ activeStep }: AnalyzeStepsProps) {
         <div
           className="absolute -inset-3 rounded-full opacity-40 blur-xl"
           style={{
-            background: 'conic-gradient(from 0deg, #8b5cf6, #22d3ee, #f59e0b, #8b5cf6)',
+            background: 'conic-gradient(from 0deg, #8046fe, #4edbed, #e07ce9, #8046fe)',
             animation: 'spin 6s linear infinite',
           }}
         />
         <div
           className="absolute -inset-1 rounded-full"
           style={{
-            background: 'conic-gradient(from 0deg, #8b5cf6, transparent 40%, #22d3ee 60%, transparent 80%, #8b5cf6)',
+            background: 'conic-gradient(from 0deg, #8046fe, transparent 40%, #e07ce9 60%, transparent 80%, #8046fe)',
             animation: 'spin 8s linear infinite',
           }}
         />
         <svg width="224" height="224" viewBox="0 0 224 224" className="relative -rotate-90">
           <defs>
             <linearGradient id="chargeGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#8b5cf6" />
-              <stop offset="100%" stopColor="#22d3ee" />
+              <stop offset="0%" stopColor="#8046fe" />
+              <stop offset="100%" stopColor="#e07ce9" />
             </linearGradient>
           </defs>
-          <circle cx="112" cy="112" r={radius} fill="none" stroke="#161b22" strokeWidth="10" />
+          <circle cx="112" cy="112" r={radius} fill="none" stroke="#1c1933" strokeWidth="10" />
           <circle
             cx="112"
             cy="112"
@@ -82,7 +82,7 @@ export default function AnalyzeSteps({ activeStep }: AnalyzeStepsProps) {
                     done
                       ? 'border-emerald-400/50 bg-emerald-400/10 text-emerald-400'
                       : active
-                        ? 'border-accent/60 bg-accent/10 text-accent2 shadow-[0_0_20px_-4px_rgba(139,92,246,0.6)]'
+                        ? 'border-accent/60 bg-accent/10 text-accent2 shadow-[0_0_20px_-4px_rgba(128,70,254,0.6)]'
                         : 'border-border bg-surface text-muted'
                   }`}
                 >

@@ -60,6 +60,7 @@ export default function Analyze() {
       <Navbar />
       <main className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col items-center overflow-hidden px-4 py-16">
         <div className="pointer-events-none absolute -top-24 left-1/2 h-72 w-[30rem] -translate-x-1/2 rounded-full bg-accent/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 right-0 h-64 w-64 rounded-full bg-pink/10 blur-3xl" />
 
         {!running && (
           <motion.div
@@ -68,7 +69,7 @@ export default function Analyze() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent2">
+            <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent2 shadow-[0_0_24px_-6px_rgba(128,70,254,0.7)]">
               <Sparkles className="h-3.5 w-3.5" /> The analyzer
             </span>
             <h1 className="mt-4 text-center font-display text-3xl font-bold tracking-tight sm:text-4xl">
@@ -84,7 +85,7 @@ export default function Analyze() {
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
                   placeholder="username"
-                  className="w-full rounded-xl border border-border bg-surface py-3 pl-9 pr-4 text-ink outline-none transition placeholder:text-muted focus:border-accent focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]"
+                  className="w-full rounded-xl border border-border bg-surface py-3 pl-9 pr-4 text-ink outline-none transition placeholder:text-muted focus:border-accent focus:shadow-[0_0_0_3px_rgba(128,70,254,0.2),0_0_24px_-6px_rgba(128,70,254,0.5)]"
                   aria-label="GitHub username"
                   autoFocus
                 />
@@ -92,7 +93,7 @@ export default function Analyze() {
               <button
                 type="submit"
                 disabled={!cleanUsername(input)}
-                className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent2 px-5 py-3 font-medium text-white transition hover:shadow-[0_8px_30px_-8px_rgba(139,92,246,0.7)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn-neon group flex items-center gap-2 rounded-xl px-5 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
               >
                 Analyze
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -132,9 +133,7 @@ export default function Analyze() {
           >
             <h1 className="text-center font-display text-2xl font-bold tracking-tight">
               Summoning the aura of{' '}
-              <span className="bg-gradient-to-r from-accent to-cyan bg-clip-text text-transparent">
-                @{cleanUsername(input)}
-              </span>
+              <span className="grad-text text-glow">@{cleanUsername(input)}</span>
             </h1>
             <AnalyzeSteps activeStep={step} />
           </motion.div>

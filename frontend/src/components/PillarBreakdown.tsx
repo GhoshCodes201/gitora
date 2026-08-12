@@ -4,11 +4,11 @@ import type { ScoreComponent } from '../types/gitora'
 import { useCountUp } from '../hooks/useCountUp'
 
 const PILLAR_META: Record<string, { icon: LucideIcon; color: string }> = {
-  activity: { icon: Flame, color: '#22d3ee' },
-  consistency: { icon: CalendarCheck, color: '#34d399' },
-  collaboration: { icon: GitPullRequest, color: '#60a5fa' },
-  quality: { icon: ShieldCheck, color: '#f59e0b' },
-  opensource: { icon: Globe, color: '#f472b6' },
+  activity: { icon: Flame, color: '#4edbed' },
+  consistency: { icon: CalendarCheck, color: '#a78bfa' },
+  collaboration: { icon: GitPullRequest, color: '#9a6bff' },
+  quality: { icon: ShieldCheck, color: '#b8a1ed' },
+  opensource: { icon: Globe, color: '#e07ce9' },
 }
 
 interface PillarBreakdownProps {
@@ -19,7 +19,7 @@ export default function PillarBreakdown({ components }: PillarBreakdownProps) {
   return (
     <div className="space-y-5">
       {components.map((component, index) => {
-        const meta = PILLAR_META[component.key] ?? { icon: Flame, color: '#8b5cf6' }
+        const meta = PILLAR_META[component.key] ?? { icon: Flame, color: '#8046fe' }
         const Icon = meta.icon
         const value = useCountUp(component.score, 1, 0, 0.2 + index * 0.12)
 

@@ -13,7 +13,7 @@ interface StatCardProps {
   index?: number
 }
 
-export default function StatCard({ icon: Icon, label, value, sub, hint, accent = '#8b5cf6', index = 0 }: StatCardProps) {
+export default function StatCard({ icon: Icon, label, value, sub, hint, accent = '#8046fe', index = 0 }: StatCardProps) {
   const numeric = parseFloat(value.replace(/[^\d.]/g, ''))
   const isCountable = value !== '0' && (value.includes('.') ? /^\d+(\.\d+)?[kM]?$/.test(value) : /^\d+$/.test(value))
   const shown = useCountUp(isCountable ? numeric : 0, 0.9, 0, 0.1 + index * 0.05)

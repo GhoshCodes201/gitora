@@ -29,7 +29,7 @@ interface ChartTooltipProps {
 function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
   if (!active || !payload || payload.length === 0) return null
   return (
-    <div className="rounded-xl border border-border bg-surface px-3 py-2 text-xs shadow-[0_8px_30px_-12px_rgba(139,92,246,0.5)]">
+    <div className="rounded-xl border border-border bg-surface px-3 py-2 text-xs shadow-[0_8px_30px_-12px_rgba(128,70,254,0.5)]">
       <div className="text-muted">{label}</div>
       <div className="mt-0.5 font-mono font-semibold text-accent2">
         {payload[0].value.toLocaleString()} commits
@@ -57,8 +57,8 @@ export default function GrowthChart({ weeks }: GrowthChartProps) {
         <AreaChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
           <defs>
             <linearGradient id="growthFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#8b5cf6" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="#8b5cf6" stopOpacity={0} />
+              <stop offset="0%" stopColor="#a78bfa" stopOpacity={0.45} />
+              <stop offset="100%" stopColor="#e07ce9" stopOpacity={0} />
             </linearGradient>
             <filter id="growthGlow" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur stdDeviation="5" result="blur" />
@@ -68,15 +68,15 @@ export default function GrowthChart({ weeks }: GrowthChartProps) {
               </feMerge>
             </filter>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#21262d" vertical={false} />
-          <XAxis dataKey="label" ticks={ticks} stroke="#8b949e" fontSize={11} tickLine={false} axisLine={false} />
-          <YAxis stroke="#8b949e" fontSize={11} tickLine={false} axisLine={false} width={44} />
-          <Tooltip cursor={{ stroke: '#39414b', strokeDasharray: '3 3' }} content={<ChartTooltip />} />
-          <ReferenceLine y={0} stroke="#21262d" />
+          <CartesianGrid strokeDasharray="3 3" stroke="#2a2438" vertical={false} />
+          <XAxis dataKey="label" ticks={ticks} stroke="#b1b1b1" fontSize={11} tickLine={false} axisLine={false} />
+          <YAxis stroke="#b1b1b1" fontSize={11} tickLine={false} axisLine={false} width={44} />
+          <Tooltip cursor={{ stroke: '#44386b', strokeDasharray: '3 3' }} content={<ChartTooltip />} />
+          <ReferenceLine y={0} stroke="#2a2438" />
           <Area
             type="monotone"
             dataKey="commits"
-            stroke="#8b5cf6"
+            stroke="#a78bfa"
             strokeWidth={2.5}
             fill="url(#growthFill)"
             filter="url(#growthGlow)"

@@ -39,13 +39,13 @@ export default function ScoreGauge({ score, label }: ScoreGaugeProps) {
               <stop offset="100%" stopColor={tier.gradient.includes('#f') ? '#f472b6' : tier.color} />
             </linearGradient>
           </defs>
-          <circle cx="114" cy="114" r={radius} fill="none" stroke="#161b22" strokeWidth="14" />
+          <circle cx="114" cy="114" r={radius} fill="none" stroke="#1c1933" strokeWidth="14" />
           <circle
             cx="114"
             cy="114"
             r={radius}
             fill="none"
-            stroke="#21262d"
+            stroke="#2a2438"
             strokeWidth="14"
             strokeDasharray={circumference}
             strokeDashoffset={circumference * (1 - 0.12)}

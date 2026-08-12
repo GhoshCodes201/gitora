@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-6 px-4 text-center text-sm text-muted">
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-cyan text-sm font-bold text-white">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-pink text-sm font-bold text-white">
             G
           </span>
           <span className="font-display text-base font-bold tracking-tight text-ink">Gitora</span>

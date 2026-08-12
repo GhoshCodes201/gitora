@@ -22,27 +22,27 @@ const PILLARS = [
   {
     icon: BarChart3,
     title: 'Activity',
-    desc: 'Commits, repositories, stars and issues rolled into a single signal.',
+    desc: 'Commits, repositories, stars and issues — the raw grind, quantified.',
   },
   {
     icon: Flame,
     title: 'Consistency',
-    desc: 'Active weeks, contribution streaks and your coding rhythm over time.',
+    desc: 'Active weeks, contribution streaks and your coding rhythm. No skipped boss fights.',
   },
   {
     icon: GitPullRequest,
     title: 'Collaboration',
-    desc: 'Issues, forks and community engagement. Partial without a token.',
+    desc: 'Issues, forks and community engagement. Squad up or go solo — partial without a token.',
   },
   {
     icon: FolderGit2,
     title: 'Project Quality',
-    desc: 'Documentation, licensing, community interest and maintenance recency.',
+    desc: 'Documentation, licensing and maintenance recency. A clean build is a happy build.',
   },
   {
     icon: Globe,
     title: 'Open Source',
-    desc: 'Public projects and contributions to the broader ecosystem.',
+    desc: 'Public projects and contributions to the wider ecosystem. Sharing is leveling up.',
   },
 ]
 
@@ -99,10 +99,10 @@ export default function Landing() {
       <main className="flex-1">
         <section className="relative overflow-hidden">
           <div className="pointer-events-none absolute -top-32 left-1/2 h-[28rem] w-[46rem] -translate-x-1/2 rounded-full bg-accent/25 blur-3xl" />
-          <div className="pointer-events-none absolute -left-24 top-44 h-72 w-72 rounded-full bg-cyan/15 blur-3xl" />
+          <div className="pointer-events-none absolute -left-24 top-44 h-72 w-72 rounded-full bg-pink/15 blur-3xl" />
           <div className="pointer-events-none absolute -right-24 bottom-4 h-72 w-72 rounded-full bg-accent2/15 blur-3xl" />
           <div
-            className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(139,92,246,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.07)_1px,transparent_1px)] [background-size:44px_44px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black_35%,transparent_100%)]"
+            className="pointer-events-none absolute inset-0 [background-image:linear-gradient(rgba(128,70,254,0.07)_1px,transparent_1px),linear-gradient(90deg,rgba(128,70,254,0.07)_1px,transparent_1px)] [background-size:44px_44px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black_35%,transparent_100%)]"
           />
           {PARTICLES.map((particle, index) => (
             <span
@@ -113,7 +113,7 @@ export default function Landing() {
                 top: particle.top,
                 width: particle.size,
                 height: particle.size,
-                boxShadow: '0 0 10px rgba(139,92,246,0.7)',
+                boxShadow: '0 0 10px rgba(128,70,254,0.7)',
                 animation: `float ${particle.duration} ease-in-out infinite`,
                 animationDelay: particle.delay,
               }}
@@ -127,7 +127,7 @@ export default function Landing() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
               >
-                <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent2">
+                <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent2 shadow-[0_0_24px_-6px_rgba(128,70,254,0.7)]">
                   <Sparkles className="h-3.5 w-3.5" /> Developer intelligence from your GitHub
                 </span>
               </motion.div>
@@ -138,10 +138,8 @@ export default function Landing() {
                 transition={{ duration: 0.6, delay: 0.1 }}
                 className="mt-5 font-display text-5xl font-bold leading-[1.05] tracking-tight sm:text-6xl"
               >
-                Your code has an{' '}
-                <span className="bg-gradient-to-r from-accent via-accent2 to-cyan bg-clip-text text-transparent [text-shadow:0_0_34px_rgba(139,92,246,0.5)]">
-                  aura
-                </span>
+                Your code has a{' '}
+                <span className="grad-text text-glow">legendary aura</span>
                 .
               </motion.h1>
 
@@ -151,8 +149,9 @@ export default function Landing() {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 className="mt-5 max-w-lg text-lg text-muted"
               >
-                Turn your GitHub activity into a developer score — activity, consistency, project
-                quality and open-source signal, distilled into one number.
+                Your daily dose of dubiously skilled analytics. Turn your GitHub grind into one
+                glowing score — activity, consistency, quality and open-source signal, distilled
+                into a single number.
               </motion.p>
 
               <motion.form
@@ -168,14 +167,14 @@ export default function Landing() {
                     value={username}
                     onChange={(event) => setUsername(event.target.value)}
                     placeholder="username"
-                    className="w-full rounded-xl border border-border bg-surface py-3 pl-9 pr-4 text-ink outline-none transition placeholder:text-muted focus:border-accent focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]"
+                    className="w-full rounded-xl border border-border bg-surface py-3 pl-9 pr-4 text-ink outline-none transition placeholder:text-muted focus:border-accent focus:shadow-[0_0_0_3px_rgba(128,70,254,0.2),0_0_24px_-6px_rgba(128,70,254,0.5)]"
                     aria-label="GitHub username"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={!cleanUsername(username)}
-                  className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent2 px-5 py-3 font-medium text-white transition hover:shadow-[0_8px_30px_-8px_rgba(139,92,246,0.7)] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-neon group flex items-center gap-2 rounded-xl px-5 py-3 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none"
                 >
                   Analyze
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -201,9 +200,9 @@ export default function Landing() {
               transition={{ duration: 0.7, delay: 0.25 }}
               className="mx-auto w-fit"
             >
-              <div className="card p-6">
-                <span className="mb-4 flex items-center justify-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-cyan">
-                  <span className="h-1.5 w-1.5 animate-pulse-glow rounded-full bg-cyan" /> live preview
+              <div className="card shine-surface p-6">
+                <span className="mb-4 flex items-center justify-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.25em] text-pink">
+                  <span className="h-1.5 w-1.5 animate-pulse-glow rounded-full bg-pink" /> now loading
                 </span>
                 <DemoGauge username={username} />
               </div>
@@ -232,7 +231,7 @@ export default function Landing() {
 
         <section className="mx-auto max-w-6xl px-4 py-20">
           <SectionHeading
-            eyebrow="The five pillars"
+            eyebrow="The five power-ups"
             title="What Gitora analyzes"
             sub="Five weighted signals feed into your Gitora Score."
           />
@@ -246,7 +245,7 @@ export default function Landing() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.07 }}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent/25 to-cyan/20 text-accent2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent/30 to-pink/20 text-accent2 shadow-[0_0_18px_-4px_rgba(128,70,254,0.7)]">
                   <pillar.icon className="h-5 w-5" />
                 </div>
                 <h3 className="mt-4 font-semibold text-ink">{pillar.title}</h3>
@@ -260,7 +259,7 @@ export default function Landing() {
           <div className="mx-auto max-w-3xl px-4 text-center">
             <SectionHeading
               eyebrow="The score machine"
-              title="How your score is composed"
+              title="How your aura is composed"
               sub="Weighted pillars in, one aura out."
             />
             <div className="mt-10 space-y-4 text-left">
@@ -299,10 +298,10 @@ export default function Landing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.3 }}
-                className="flex items-center justify-between rounded-2xl border border-accent/40 bg-accent/10 px-5 py-4"
+                className="flex items-center justify-between rounded-2xl border border-accent/40 bg-accent/10 px-5 py-4 shadow-[0_0_30px_-10px_rgba(128,70,254,0.6)]"
               >
                 <span className="font-display text-lg font-bold text-ink">Your Gitora Score</span>
-                <span className="font-mono text-lg font-semibold text-accent2">= your aura</span>
+                <span className="grad-text font-mono text-lg font-semibold">= your aura</span>
               </motion.div>
             </div>
 
@@ -327,18 +326,18 @@ export default function Landing() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-surface to-surface2 p-10 text-center"
+            className="card shine-surface relative overflow-hidden p-10 text-center"
           >
-            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-cyan/15 blur-3xl" />
+            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent/25 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-pink/20 blur-3xl" />
             <div className="relative">
               <h2 className="font-display text-3xl font-bold tracking-tight">Ready to see your aura?</h2>
               <p className="mx-auto mt-3 max-w-md text-muted">
-                Enter your GitHub username and get your developer profile in seconds.
+                Enter your GitHub username and grab your developer scorecard in seconds.
               </p>
               <Link
                 to="/analyze"
-                className="group mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent2 px-6 py-3 font-medium text-white transition hover:shadow-[0_8px_30px_-8px_rgba(139,92,246,0.7)]"
+                className="btn-neon group mt-8 inline-flex items-center gap-2 rounded-xl px-6 py-3 font-medium text-white"
               >
                 Analyze My GitHub
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

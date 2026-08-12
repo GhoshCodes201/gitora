@@ -29,7 +29,7 @@ interface RepoCardProps {
 export default function RepoCard({ repo }: RepoCardProps) {
   const activity = repo.weekly.slice(-26)
   const max = Math.max(1, ...activity.map((week) => week.total))
-  const languageColor = repo.language ? LANGUAGE_COLORS[repo.language] ?? '#8b5cf6' : undefined
+  const languageColor = repo.language ? LANGUAGE_COLORS[repo.language] ?? '#8046fe' : undefined
 
   return (
     <motion.div
@@ -81,8 +81,8 @@ export default function RepoCard({ repo }: RepoCardProps) {
               style={{
                 backgroundColor:
                   week.total > 0
-                    ? `rgba(139, 92, 246, ${(0.25 + 0.75 * (week.total / max)).toFixed(2)})`
-                    : '#161b22',
+                    ? `rgba(224, 124, 233, ${(0.25 + 0.75 * (week.total / max)).toFixed(2)})`
+                    : '#1c1933',
               }}
               title={`${week.total} commits`}
             />
