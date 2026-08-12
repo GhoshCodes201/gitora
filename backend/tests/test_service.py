@@ -52,8 +52,8 @@ class FakeClient:
 
     async def get_personal_commits(
         self, owner: str, repo: str, username: str
-    ) -> tuple[list[CommitWeek], bool]:
-        return self._personal_weekly, True
+    ) -> tuple[list[CommitWeek], list, bool]:
+        return self._personal_weekly, [], True
 
     async def has_readme(self, owner: str, repo: str) -> bool:
         return True
@@ -110,6 +110,30 @@ async def test_failed_analyze_does_not_poison_subsequent(settings, tmp_path):
     assert exc_info.value.status_code == 404
     result = await service.analyze("octocat")
     assert result.username == "octocat"
+
+
+@pytest.mark.asyncio
+async def test_personal_commits_flow_to_recent_feed(settings, tmp_path):
+    from datetime import datetime, timezone
+
+    from app.github.models import CommitInfo
+
+    class CommitsClient(FakeClient):
+        async def get_personal_commits(
+            self, owner: str, repo: str, username: str
+        ) -> tuple[list[CommitWeek], list[CommitInfo], bool]:
+            return (
+                self._personal_weekly,
+                [CommitInfo(sha="abc123", date=datetime.now(timezone.utc), message="fix: the bug")],
+                True,
+            )
+
+    service = make_service(settings, tmp_path, CommitsClient())
+    result = await service.analyze("octocat")
+    assert len(result.recent_commits) == 2
+    assert {c.sha for c in result.recent_commits} == {"abc123"}
+    assert {c.message for c in result.recent_commits} == {"fix: the bug"}
+    assert {c.repo for c in result.recent_commits} == {"alpha", "beta"}
 
 
 @pytest.mark.asyncio

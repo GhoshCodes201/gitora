@@ -159,12 +159,13 @@ class AnalysisService:
             # never take down the whole analysis.
             return RepoAnalysis(repo=repo, has_readme=False, stats_complete=False)
         weekly, weekly_complete = weekly_result
-        personal_weekly, personal_complete = personal_result
+        personal_weekly, personal_commits, personal_complete = personal_result
         return RepoAnalysis(
             repo=repo,
             has_readme=has_readme,
             weekly=weekly,
             personal_weekly=personal_weekly,
+            personal_commits=personal_commits,
             personal_complete=personal_complete,
             stats_complete=weekly_complete,
             total_commits=sum(int(w.total or 0) for w in personal_weekly),

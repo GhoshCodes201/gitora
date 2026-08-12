@@ -10,7 +10,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?logo=typescript&logoColor=fff&style=flat-square)]()
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=fff&style=flat-square)]()
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=fff&style=flat-square)]()
-[![tests](https://img.shields.io/badge/tests-81%20passed-22d3ee?style=flat-square)]()
+[![tests](https://img.shields.io/badge/tests-82%20passed-22d3ee?style=flat-square)]()
 [![license](https://img.shields.io/badge/license-MIT-8b5cf6?style=flat-square)]()
 
 </div>
@@ -146,6 +146,32 @@ cd backend
 source .venv/bin/activate
 pytest -q
 ```
+
+## 🚢 Deployment
+
+The whole app ships as a **single container**: FastAPI serves the built React
+frontend (SPA fallback included), so `/api/*` and `/` live on one origin — no
+CORS, no separate hosting.
+
+```bash
+docker build -t gitora:demo-v1 .
+docker run --rm -p 8000:8000 -e GITORA_GITHUB_TOKEN=ghp_xxx gitora:demo-v1
+```
+
+> `GITORA_GITHUB_TOKEN` is a deploy secret — never put it in the repo. It boosts
+> the GitHub API limit from 60 to 5,000 requests/hour.
+
+**Render (free)** — connect the repo, Render picks up `render.yaml`, then set
+`GITORA_GITHUB_TOKEN` as a secret. Health check: `/api/v1/health`.
+
+**Railway / Fly.io** — deploy the Dockerfile directly; both inject a `PORT` env
+that the container honors.
+
+**VPS with Docker** — `docker compose up -d` (reads `GITORA_GITHUB_TOKEN` from a
+server-side `.env`; SQLite cache persists in a named volume).
+
+> The SQLite cache is ephemeral on PaaS free tiers (resets on redeploy) — fine
+> for a demo. The docker-compose setup keeps it on disk.
 
 ## 🗺️ Roadmap
 

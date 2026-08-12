@@ -60,8 +60,8 @@ class FakeClient:
 
     async def get_personal_commits(
         self, owner: str, repo: str, username: str
-    ) -> tuple[list[CommitWeek], bool]:
-        return self._personal_weekly, True
+    ) -> tuple[list[CommitWeek], list, bool]:
+        return self._personal_weekly, [], True
 
     async def has_readme(self, owner: str, repo: str) -> bool:
         return True

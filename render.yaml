@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: gitora
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: GITORA_GITHUB_TOKEN
+        sync: false
+      - key: GITORA_CORS_ORIGINS
+        value: "*"
+      - key: GITORA_STATIC_DIR
+        value: /app/frontend/dist

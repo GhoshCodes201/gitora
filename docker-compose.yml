@@ -1,0 +1,16 @@
+services:
+  gitora:
+    build: .
+    image: gitora:demo-v1
+    container_name: gitora
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - GITORA_GITHUB_TOKEN=${GITORA_GITHUB_TOKEN:?set GITORA_GITHUB_TOKEN in a .env file on the server}
+      - GITORA_CORS_ORIGINS=*
+    volumes:
+      - gitora-data:/app/data
+
+volumes:
+  gitora-data:

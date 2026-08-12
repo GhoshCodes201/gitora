@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.ratelimit import FixedWindowLimiter
 from app.api.routes import router
 from app.core.config import get_settings
+from app.static import mount_frontend
 
 
 def create_app() -> FastAPI:
@@ -31,6 +32,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(router)
+    mount_frontend(app, settings.static_dir)
     return app
 
 
