@@ -14,6 +14,7 @@ import { motion } from 'framer-motion'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import Card from '../components/Card'
+import CacheNotice from '../components/CacheNotice'
 import StatCard from '../components/StatCard'
 import ScoreGauge from '../components/ScoreGauge'
 import PillarBreakdown from '../components/PillarBreakdown'
@@ -70,7 +71,7 @@ interface DashboardBodyProps {
   onRefresh: () => void
 }
 
-const STAT_ACCENTS = ['#22d3ee', '#f59e0b', '#34d399', '#8b5cf6', '#fbbf24', '#60a5fa', '#f472b6', '#a78bfa']
+const STAT_ACCENTS = ['#4edbed', '#e07ce9', '#a78bfa', '#8046fe', '#9a6bff', '#b8a1ed', '#f472b6', '#8d72d3']
 
 function DashboardBody({ data, refreshing, onRefresh }: DashboardBodyProps) {
   const {
@@ -114,6 +115,15 @@ function DashboardBody({ data, refreshing, onRefresh }: DashboardBodyProps) {
         onRefresh={onRefresh}
       />
 
+      {meta.cache_hit && !meta.stale && (
+        <CacheNotice
+          generatedAt={meta.generated_at}
+          expiresAt={meta.expires_at}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+      )}
+
       {meta.warning && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -156,18 +166,21 @@ function DashboardBody({ data, refreshing, onRefresh }: DashboardBodyProps) {
       </div>
 
       <Card>
-        <SectionHeader title="Repo activity" right={<span className="text-xs text-muted">last 52 weeks</span>} />
-        <ContributionHeatmap weeks={heatmap} />
+        <SectionHeader
+          title="Your activity"
+          right={<span className="text-xs text-muted">your commits · last 52 weeks</span>}
+        />
+        <ContributionHeatmap weeks={heatmap} recentCommits={data.recent_commits} />
         <p className="mt-3 text-xs font-medium text-muted">How commits are counted</p>
         <ul className="mt-1 list-disc space-y-1 pl-5 text-xs text-muted">
           <li>
-            <span className="text-ink">Your commits</span> — commits authored by this profile on the default branch
-            of their {meta.repos_analyzed} most-active repos (max 300 per repo, forks included). Drives the score and
-            stats above.
+            <span className="text-ink">Your commits</span> — commits authored by this profile on the default
+            branch of their {meta.repos_analyzed} most-active repos (max 300 per repo, forks included). Drives
+            the heatmap, activity trend, score and stats above.
           </li>
           <li>
-            <span className="text-ink">Repo activity</span> — all contributors' commits across those same repos over
-            the last 52 weeks. This is what the heatmap shows.
+            <span className="text-ink">Repo cards</span> — the small sparkline on each repo card shows that
+            repo&apos;s full contributor activity, so per-repo numbers may be higher than your own.
           </li>
           {meta.partial_components.includes('commits') && (
             <li className="text-amber-200/80">

@@ -89,8 +89,16 @@ export interface Achievement {
   icon: string
 }
 
+export interface Commit {
+  sha: string
+  date: string
+  message: string
+  repo: string
+}
+
 export interface Meta {
   generated_at: string
+  expires_at: string
   cache_hit: boolean
   stale: boolean
   warning: string | null
@@ -110,6 +118,7 @@ export interface GitoraAnalysis {
   monthly: Month[]
   growth_trend_pct: number
   weekend_ratio_pct: number
+  recent_commits: Commit[]
   repositories: Repo[]
   achievements: Achievement[]
   meta: Meta
