@@ -31,6 +31,12 @@ export function useAnalysis(username?: string): UseAnalysisResult {
   )
 
   useEffect(() => {
+    setData(null)
+    setError(null)
+    setLoading(false)
+  }, [username])
+
+  useEffect(() => {
     void load()
   }, [load])
 

@@ -8,14 +8,17 @@ export function useCountUp(target: number, duration = 1.1, start = 0, delay = 0)
   const rounded = useTransform(motion, (v) => Math.round(v))
 
   useEffect(() => {
-    rounded.on('change', (latest) => setDisplay(latest))
+    const unsubscribe = rounded.on('change', (latest) => setDisplay(latest))
     const controls = animate(motion, target, {
       duration,
       delay,
       ease: [0.16, 1, 0.3, 1],
       onComplete: () => setDisplay(target),
     })
-    return () => controls.stop()
+    return () => {
+      unsubscribe()
+      controls.stop()
+    }
   }, [target, duration, delay, motion, rounded])
 
   return display
