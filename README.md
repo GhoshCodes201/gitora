@@ -12,6 +12,7 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=fff&style=flat-square)]()
 [![tests](https://img.shields.io/badge/tests-82%20passed-22d3ee?style=flat-square)]()
 [![license](https://img.shields.io/badge/license-MIT-8b5cf6?style=flat-square)]()
+[![live](https://img.shields.io/badge/live%20demo-onrender-22d3ee?style=flat-square)](https://gitora.onrender.com/)
 
 </div>
 
@@ -28,6 +29,8 @@ project quality, collaboration and open-source contributions, and rolls it all i
 - 🔥 **Streaks, active weeks & rhythm** measured from real commit activity
 - 🏆 **Achievements** unlock as your profile tells its story
 - 🗄️ **SQLite cache** keeps repeat views instant and GitHub-rate-limit friendly
+
+> 🔴 **Live demo:** [gitora.onrender.com](https://gitora.onrender.com/) — deployed on the Render free tier, 13 Aug 2026.
 
 ## 🐍 Fresh out of the grass
 
