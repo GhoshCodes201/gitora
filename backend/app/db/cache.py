@@ -17,6 +17,7 @@ class CacheStore:
         self.db_path = db_path
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
+        self._prune_counter = 0
         self._conn = sqlite3.connect(db_path, check_same_thread=False, timeout=5.0)
         self._conn.execute(
             """
@@ -61,6 +62,10 @@ class CacheStore:
                 """,
                 (username, json.dumps(payload), now, now + ttl_hours * 3600),
             )
+            self._prune_counter += 1
+            if self._prune_counter >= 25:
+                self._prune_counter = 0
+                self._conn.execute("DELETE FROM analyses WHERE expires_at < ?", (now,))
             self._conn.commit()
 
     def close(self) -> None:

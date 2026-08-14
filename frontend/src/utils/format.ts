@@ -19,6 +19,9 @@ export function monthLabel(weekTs: number): string {
   return new Date(weekTs * 1000).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
 }
 
+const GITHUB_USERNAME_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9])){0,38}$/
+
 export function cleanUsername(raw: string): string {
-  return raw.trim().replace(/^@/, '').replace(/\s+/g, '')
+  const username = raw.trim().replace(/^@/, '').replace(/\s+/g, '')
+  return GITHUB_USERNAME_RE.test(username) ? username : ''
 }

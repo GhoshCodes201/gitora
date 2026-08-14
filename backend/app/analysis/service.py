@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
@@ -43,6 +44,8 @@ from app.schemas import (
 
 ClientFactory = Callable[[Settings], GitHubClient]
 
+_GITHUB_USERNAME_RE = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$")
+
 
 def _default_client_factory(settings: Settings) -> GitHubClient:
     return GitHubClient(settings=settings, budget=settings.request_budget)
@@ -76,8 +79,8 @@ class AnalysisService:
 
     async def analyze(self, username: str, force: bool = False) -> GitoraAnalysis:
         username = username.strip().lstrip("@")
-        if not username:
-            raise HTTPException(status_code=422, detail="Username is required")
+        if not username or not _GITHUB_USERNAME_RE.fullmatch(username):
+            raise HTTPException(status_code=422, detail="Invalid GitHub username")
 
         if not force:
             cached = self.cache.get(username)

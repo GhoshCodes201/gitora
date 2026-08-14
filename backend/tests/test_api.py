@@ -145,6 +145,53 @@ def test_analyze_empty_username(client):
     assert response.status_code == 422
 
 
+@pytest.mark.parametrize(
+    "username",
+    [
+        "octocat%3Ffoo",
+        "octocat%2e%2e",
+        "octocat..",
+        "a--b",
+        "octocat-",
+        "-octocat",
+        "octocat%00",
+    ],
+)
+def test_analyze_rejects_malicious_usernames(client, username):
+    response = client.get(f"/api/v1/analyze/{username}")
+    assert response.status_code == 422
+
+
+def test_security_headers_present(client):
+    response = client.get("/api/v1/analyze/octocat")
+    assert response.status_code == 200
+    assert response.headers.get("x-content-type-options") == "nosniff"
+    assert response.headers.get("x-frame-options") == "DENY"
+    assert response.headers.get("referrer-policy") == "no-referrer"
+    assert response.headers.get("strict-transport-security", "").startswith("max-age=")
+    assert "default-src 'self'" in response.headers.get("content-security-policy", "")
+    assert "frame-ancestors 'none'" in response.headers.get("content-security-policy", "")
+
+
+def test_csp_omitted_in_development(settings, tmp_path):
+    from app.main import SecurityHeadersMiddleware
+
+    app = create_app()
+    for middleware in app.user_middleware:
+        if middleware.cls is SecurityHeadersMiddleware:
+            middleware.kwargs["environment"] = "development"
+    app.state.rate_limiter = FixedWindowLimiter(100, 60)
+    store = CacheStore(str(tmp_path / "gitora.db"))
+    service = AnalysisService(cache=store, settings=settings, client_factory=lambda s: FakeClient())
+    app.dependency_overrides[get_service] = lambda: service
+    with TestClient(app) as test_client:
+        response = test_client.get("/api/v1/health")
+    assert response.status_code == 200
+    assert "content-security-policy" not in response.headers
+    assert response.headers.get("x-frame-options") == "DENY"
+    store.close()
+
+
 def test_repo_error_marks_stats_incomplete(client, monkeypatch):
     async def boom(self, owner: str, repo: str):
         if repo == "beta":
