@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.api.ratelimit import rate_limit
+from app.api.ratelimit import FixedWindowLimiter, _client_ip, rate_limit
 from app.analysis.service import AnalysisService
 from app.core.config import get_settings
 from app.db.cache import CacheStore
@@ -36,8 +36,19 @@ async def health() -> dict[str, str]:
     dependencies=[Depends(rate_limit)],
 )
 async def analyze(
+    request: Request,
     username: str,
     force: bool = False,
     service: AnalysisService = Depends(get_service),
 ) -> GitoraAnalysis:
+    if force:
+        limiter: Optional[FixedWindowLimiter] = getattr(request.app.state, "force_limiter", None)
+        if limiter is not None:
+            allowed, retry_after = limiter.hit(_client_ip(request))
+            if not allowed:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many forced refreshes. Wait before re-analyzing.",
+                    headers={"Retry-After": str(max(1, int(retry_after)))},
+                )
     return await service.analyze(username, force=force)

@@ -41,7 +41,7 @@ export default function RepoCard({ repo }: RepoCardProps) {
     >
       <div className="flex items-start justify-between gap-2">
         <a
-          href={repo.url}
+          href={repo.url?.startsWith('https://') ? repo.url : '#'}
           target="_blank"
           rel="noreferrer"
           className="truncate font-semibold text-ink transition group-hover:text-accent2"

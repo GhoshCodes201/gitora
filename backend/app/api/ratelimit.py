@@ -52,12 +52,19 @@ class FixedWindowLimiter:
             del self._buckets[key]
 
 
+def _client_ip(request: Request) -> str:
+    """Extract the real client IP, respecting X-Forwarded-For behind a trusted proxy."""
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 def rate_limit(request: Request) -> None:
     """FastAPI dependency enforcing per-IP and global limits on /analyze."""
     limiter: Optional[FixedWindowLimiter] = getattr(request.app.state, "rate_limiter", None)
     if limiter is not None:
-        client_host = request.client.host if request.client else "unknown"
-        allowed, retry_after = limiter.hit(client_host)
+        allowed, retry_after = limiter.hit(_client_ip(request))
         if not allowed:
             raise HTTPException(
                 status_code=429,

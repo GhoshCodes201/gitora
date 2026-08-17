@@ -121,7 +121,7 @@ class AnalysisService:
                         **self._cache_hit_meta(stale.get("meta", {})),
                         "cache_hit": True,
                         "stale": True,
-                        "warning": f"GitHub rate limit reached; showing cached data (resets at {exc.reset_at} UTC).",
+                        "warning": "GitHub rate limit reached; showing cached data.",
                     }
                     return GitoraAnalysis(**stale)
                 except ValidationError:
@@ -132,8 +132,8 @@ class AnalysisService:
                 status_code=503,
                 detail="GitHub API request budget exhausted. Set GITORA_GITHUB_TOKEN or retry later.",
             )
-        except GitHubError as exc:
-            raise HTTPException(status_code=502, detail=f"GitHub API error: {exc}")
+        except GitHubError:
+            raise HTTPException(status_code=502, detail="Failed to fetch GitHub data. Please try again later.")
         finally:
             await client.close()
 

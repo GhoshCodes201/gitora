@@ -67,7 +67,7 @@ export default function ProfileCard({ profile, score, summary, refreshing, onRef
                 {profile.name ?? profile.login}
               </h1>
               <a
-                href={profile.github_url}
+                href={profile.github_url?.startsWith('https://') ? profile.github_url : '#'}
                 target="_blank"
                 rel="noreferrer"
                 className="text-sm text-accent2 transition hover:underline"
@@ -107,7 +107,7 @@ export default function ProfileCard({ profile, score, summary, refreshing, onRef
               </span>
             )}
             <a
-              href={profile.github_url}
+              href={profile.github_url?.startsWith('https://') ? profile.github_url : '#'}
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-ink transition hover:bg-surface2"

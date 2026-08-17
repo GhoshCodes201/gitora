@@ -30,11 +30,6 @@ def mount_frontend(app: FastAPI, static_dir: str) -> None:
         if full_path.startswith("api/"):
             return JSONResponse({"detail": "Not found"}, status_code=404)
         return JSONResponse(
-            {
-                "detail": (
-                    "Frontend not built. Run `npm ci && npm run build` in frontend/ "
-                    "or set GITORA_STATIC_DIR to a built dist folder."
-                )
-            },
+            {"detail": "Service temporarily unavailable. Please try again later."},
             status_code=503,
         )

@@ -239,7 +239,7 @@ def test_analyze_partial_commit_activity_flags_incomplete(client, monkeypatch):
 def test_analyze_github_error_returns_502(client):
     response = client.get("/api/v1/analyze/boom")
     assert response.status_code == 502
-    assert "GitHub API error" in response.json()["detail"]
+    assert "Failed to fetch GitHub data" in response.json()["detail"]
 
 
 def test_analyze_budget_exhausted_returns_503(settings, tmp_path):

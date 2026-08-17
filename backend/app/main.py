@@ -27,7 +27,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     _CSP = (
         "default-src 'self'; "
         "script-src 'self'; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "style-src 'self' https://fonts.googleapis.com; "
         "img-src 'self' data: https:; "
         "font-src 'self' data: https://fonts.gstatic.com; "
         "connect-src 'self'; "
@@ -45,6 +45,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         for key, value in self._BASE_HEADERS.items():
             response.headers.setdefault(key, value)
+        if "server" in response.headers:
+            del response.headers["server"]
         if self._emit_csp:
             response.headers.setdefault("Content-Security-Policy", self._CSP)
         return response
@@ -53,10 +55,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 def create_app() -> FastAPI:
     settings = get_settings()
     origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+    docs_url = "/docs" if settings.environment != "production" else None
+    redoc_url = "/redoc" if settings.environment != "production" else None
+    openapi_url = "/openapi.json" if settings.environment != "production" else None
     app = FastAPI(
         title="Gitora API",
         version="0.1.0",
         description="Gitora - GitHub developer intelligence API",
+        docs_url=docs_url,
+        redoc_url=redoc_url,
+        openapi_url=openapi_url,
     )
     app.state.rate_limiter = FixedWindowLimiter(
         settings.api_rate_limit, settings.api_rate_window_seconds
@@ -66,6 +74,7 @@ def create_app() -> FastAPI:
         if settings.api_global_daily_limit > 0
         else None
     )
+    app.state.force_limiter = FixedWindowLimiter(5, 600)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
