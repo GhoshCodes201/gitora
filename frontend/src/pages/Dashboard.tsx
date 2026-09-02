@@ -26,6 +26,7 @@ import RepoCard from '../components/RepoCard'
 import AchievementGrid from '../components/AchievementGrid'
 import ProfileCard from '../components/ProfileCard'
 import SectionHeader from '../components/SectionHeader'
+import SignInRequired from '../components/SignInRequired'
 import { useAnalysis } from '../hooks/useAnalysis'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { compact } from '../utils/format'
@@ -34,7 +35,7 @@ import type { GitoraAnalysis } from '../types/gitora'
 export default function Dashboard() {
   const { username = '' } = useParams()
   usePageTitle(`Gitora — @${username}`)
-  const { data, loading, error, reload } = useAnalysis(username)
+  const { data, loading, error, errorStatus, reload } = useAnalysis(username)
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -42,7 +43,9 @@ export default function Dashboard() {
       <main className="flex-1">
         {!data && loading && <Skeleton />}
 
-        {!data && !loading && error && (
+        {!data && !loading && error && errorStatus === 401 && <SignInRequired />}
+
+        {!data && !loading && error && errorStatus !== 401 && (
           <div className="mx-auto max-w-6xl px-4 py-24 text-center">
             <SearchX className="mx-auto h-10 w-10 text-muted" />
             <h1 className="mt-4 text-2xl font-semibold">Could not load @{username}</h1>

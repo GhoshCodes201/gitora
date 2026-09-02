@@ -109,8 +109,7 @@ export interface Meta {
   repos_analyzed: number
 }
 
-export interface GitoraAnalysis {
-  username: string
+export interface GitoraAnalysis {  username: string
   profile: Profile
   score: Score
   summary: Summary
@@ -123,3 +122,10 @@ export interface GitoraAnalysis {
   achievements: Achievement[]
   meta: Meta
 }
+
+export interface AuthUser {
+  login: string
+  avatar_url: string
+  display_name: string | null
+}
+

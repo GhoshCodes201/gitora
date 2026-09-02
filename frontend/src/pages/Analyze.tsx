@@ -5,9 +5,10 @@ import { ArrowRight, AlertCircle, Sparkles } from 'lucide-react'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 import AnalyzeSteps from '../components/AnalyzeSteps'
-import { fetchAnalysis } from '../services/api'
+import { fetchAnalysis, ApiError } from '../services/api'
 import { cleanUsername } from '../utils/format'
 import { usePageTitle } from '../hooks/usePageTitle'
+import SignInRequired from '../components/SignInRequired'
 
 export default function Analyze() {
   usePageTitle('Analyze — Gitora')
@@ -17,6 +18,7 @@ export default function Analyze() {
   const [running, setRunning] = useState(false)
   const [step, setStep] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [needAuth, setNeedAuth] = useState(false)
   const timerRef = useRef<number | null>(null)
   const startedRef = useRef(false)
 
@@ -25,13 +27,18 @@ export default function Analyze() {
     if (!username) return
     setRunning(true)
     setError(null)
+    setNeedAuth(false)
     setStep(0)
     timerRef.current = window.setInterval(() => setStep((current) => Math.min(current + 1, 4)), 800)
     try {
       await fetchAnalysis(username)
       navigate(`/dashboard/${encodeURIComponent(username)}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to analyze profile')
+      if (err instanceof ApiError && err.status === 401) {
+        setNeedAuth(true)
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to analyze profile')
+      }
       setRunning(false)
     } finally {
       if (timerRef.current !== null) {
@@ -68,16 +75,21 @@ export default function Analyze() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-          >
+          >            
             <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-medium text-accent2 shadow-[0_0_24px_-6px_rgba(128,70,254,0.7)]">
               <Sparkles className="h-3.5 w-3.5" /> The analyzer
             </span>
-            <h1 className="mt-4 text-center font-display text-3xl font-bold tracking-tight sm:text-4xl">
-              Reveal your aura
-            </h1>
-            <p className="mt-3 text-center text-muted">
-              Enter a username and Gitora builds your developer profile.
-            </p>
+
+            {needAuth ? (
+              <SignInRequired />
+            ) : (
+              <div className="flex w-full flex-col items-center">
+                <h1 className="mt-4 text-center font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                  Reveal your aura
+                </h1>
+                <p className="mt-3 text-center text-muted">
+                  Enter a username and Gitora builds your developer profile.
+                </p>
             <form onSubmit={handleSubmit} className="mt-9 flex w-full max-w-md items-center gap-2">
               <div className="relative flex-1">
                 <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted">@</span>
@@ -121,7 +133,9 @@ export default function Analyze() {
                 </div>
               </motion.div>
             )}
-          </motion.div>
+          </div>
+          )}
+        </motion.div>
         )}
 
         {running && (

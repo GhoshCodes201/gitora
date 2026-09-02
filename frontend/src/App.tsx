@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { MotionConfig } from 'framer-motion'
 import ScrollToTop from './components/ScrollToTop'
 import ErrorBoundary from './components/ErrorBoundary'
+import { AuthProvider } from './hooks/useAuth'
 
 const Landing = lazy(() => import('./pages/Landing'))
 const Analyze = lazy(() => import('./pages/Analyze'))
@@ -24,15 +25,17 @@ export default function App() {
     <BrowserRouter>
       <MotionConfig reducedMotion="user">
         <ErrorBoundary>
-          <ScrollToTop />
-          <Suspense fallback={<Loader />}>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/analyze" element={<Analyze />} />
-              <Route path="/dashboard/:username" element={<Dashboard />} />
-              <Route path="*" element={<Landing />} />
-            </Routes>
-          </Suspense>
+          <AuthProvider>
+            <ScrollToTop />
+            <Suspense fallback={<Loader />}>
+              <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/analyze" element={<Analyze />} />
+                <Route path="/dashboard/:username" element={<Dashboard />} />
+                <Route path="*" element={<Landing />} />
+              </Routes>
+            </Suspense>
+          </AuthProvider>
         </ErrorBoundary>
       </MotionConfig>
     </BrowserRouter>
