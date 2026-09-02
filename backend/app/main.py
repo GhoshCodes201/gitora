@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.api.ratelimit import FixedWindowLimiter
+from app.api.auth import router as auth_router
 from app.api.routes import router
 from app.core.config import get_settings
 from app.static import mount_frontend
@@ -66,6 +67,7 @@ def create_app() -> FastAPI:
         redoc_url=redoc_url,
         openapi_url=openapi_url,
     )
+    app.state.settings = settings
     app.state.rate_limiter = FixedWindowLimiter(
         settings.api_rate_limit, settings.api_rate_window_seconds
     )
@@ -75,6 +77,9 @@ def create_app() -> FastAPI:
         else None
     )
     app.state.force_limiter = FixedWindowLimiter(5, 600)
+    app.state.user_limiter = FixedWindowLimiter(
+        settings.api_rate_limit, settings.api_rate_window_seconds
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
@@ -82,6 +87,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.add_middleware(SecurityHeadersMiddleware, environment=settings.environment)
+    app.include_router(auth_router)
     app.include_router(router)
     mount_frontend(app, settings.static_dir)
     return app

@@ -105,7 +105,7 @@ class CommitOut(BaseModel):
 
 class MetaOut(BaseModel):
     generated_at: str
-    expires_at: str
+    expires_at: str = ""
     cache_hit: bool = False
     stale: bool = False
     warning: Optional[str] = None

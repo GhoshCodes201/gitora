@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     api_rate_window_seconds: int = 600
     api_global_daily_limit: int = 200
 
+    auth_required: bool = False
+    github_client_id: str = ""
+    github_client_secret: str = ""
+    auth_secret: str = ""
+    auth_redirect_uri: str = ""
+    auth_token_ttl_hours: int = 72
+    auth_base_url: str = "https://github.com"
+    auth_api_base: str = "https://api.github.com"
+
     @model_validator(mode="after")
     def _validate_github_api_base(self) -> "Settings":
         """Block SSRF: only https to GitHub hosts unless explicitly allowed.

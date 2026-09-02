@@ -6,6 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.ratelimit import FixedWindowLimiter, _client_ip, rate_limit
 from app.analysis.service import AnalysisService
+from app.auth.deps import get_optional_user
+from app.auth.jwt import AuthUser
 from app.core.config import get_settings
 from app.db.cache import CacheStore
 from app.schemas import GitoraAnalysis
@@ -40,7 +42,16 @@ async def analyze(
     username: str,
     force: bool = False,
     service: AnalysisService = Depends(get_service),
+    user: Optional[AuthUser] = Depends(get_optional_user),
 ) -> GitoraAnalysis:
+    app_settings = getattr(request.app.state, "settings", None)
+    if app_settings is not None and app_settings.auth_required and user is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Authentication required to analyze profiles",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     if force:
         limiter: Optional[FixedWindowLimiter] = getattr(request.app.state, "force_limiter", None)
         if limiter is not None:
@@ -51,4 +62,17 @@ async def analyze(
                     detail="Too many forced refreshes. Wait before re-analyzing.",
                     headers={"Retry-After": str(max(1, int(retry_after)))},
                 )
+
+    if user is not None:
+        user_limiter: Optional[FixedWindowLimiter] = getattr(request.app.state, "user_limiter", None)
+        if user_limiter is not None:
+            allowed, retry_after = user_limiter.hit(user.login)
+            if not allowed:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Too many analysis requests. Try again later.",
+                    headers={"Retry-After": str(max(1, int(retry_after)))},
+                )
+
     return await service.analyze(username, force=force)
+

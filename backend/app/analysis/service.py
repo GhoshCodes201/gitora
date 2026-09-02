@@ -153,13 +153,8 @@ class AnalysisService:
         except GitHubRateLimited:
             raise
         except GitHubBudgetExhausted:
-            # The request budget ran out while working on this repo. Degrade
-            # gracefully: finish the analysis with partial data rather than
-            # failing the whole request with a 503.
             return RepoAnalysis(repo=repo, has_readme=False, stats_complete=False)
         except Exception:
-            # Isolate per-repo failures: a single malformed/errored repo must
-            # never take down the whole analysis.
             return RepoAnalysis(repo=repo, has_readme=False, stats_complete=False)
         weekly, weekly_complete = weekly_result
         personal_weekly, personal_commits, personal_complete = personal_result
@@ -254,7 +249,7 @@ class AnalysisService:
         warning = None
         if incomplete:
             shown = incomplete[:5]
-            more = "…" if len(incomplete) > 5 else ""
+            more = "..." if len(incomplete) > 5 else ""
             warning = (
                 f"Could not fully analyze {len(incomplete)} repo(s): "
                 f"{', '.join(shown)}{more}. Some stats are partial."
