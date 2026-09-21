@@ -129,7 +129,7 @@
 
     <text x="150" y="402" font-size="13" fill="#8b949e" opacity="0">
       <animate attributeName="opacity" values="0;0.8" dur="1s" begin="3s" fill="freeze"/>
-      auto-refreshed weekly via GitHub Actions · 2026-09-14 09:50 UTC
+      auto-refreshed weekly via GitHub Actions · 2026-09-21 09:55 UTC
     </text>
   </g>
 </svg>
